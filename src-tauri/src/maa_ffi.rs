@@ -6,6 +6,10 @@
 //! - macOS: libMaaFramework.dylib, libMaaToolkit.dylib
 //! - Linux: libMaaFramework.so, libMaaToolkit.so
 
+// 这是纯 FFI 绑定模块：符号/常量/字段会随着上层功能逐步启用。
+// 若严格开启 dead_code，会在开发期产生大量无意义 warning，反而干扰排查真正问题。
+#![allow(dead_code)]
+
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::path::Path;
