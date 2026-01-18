@@ -41,6 +41,7 @@ export function ConnectionPanel() {
     selectedResource,
     setSelectedController,
     setSelectedResource,
+    setInstanceConnectionStatus,
   } = useAppStore();
 
   // 折叠状态
@@ -215,9 +216,11 @@ export function ConnectionPanel() {
       const agentPath = `${basePath}/MaaAgentBinary`;
       await maaService.connectController(instanceId, config, agentPath);
       setIsConnected(true);
+      setInstanceConnectionStatus(instanceId, 'Connected');
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : t('controller.connectionFailed'));
       setIsConnected(false);
+      setInstanceConnectionStatus(instanceId, 'Disconnected');
     } finally {
       setIsConnecting(false);
     }
@@ -303,9 +306,11 @@ export function ConnectionPanel() {
       const agentPath = `${basePath}/MaaAgentBinary`;
       await maaService.connectController(instanceId, config, agentPath);
       setIsConnected(true);
+      setInstanceConnectionStatus(instanceId, 'Connected');
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : t('controller.connectionFailed'));
       setIsConnected(false);
+      setInstanceConnectionStatus(instanceId, 'Disconnected');
     } finally {
       setIsConnecting(false);
     }
@@ -353,9 +358,11 @@ export function ConnectionPanel() {
       const agentPath = `${basePath}/MaaAgentBinary`;
       await maaService.connectController(instanceId, config, agentPath);
       setIsConnected(true);
+      setInstanceConnectionStatus(instanceId, 'Connected');
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : t('controller.connectionFailed'));
       setIsConnected(false);
+      setInstanceConnectionStatus(instanceId, 'Disconnected');
     } finally {
       setIsConnecting(false);
     }

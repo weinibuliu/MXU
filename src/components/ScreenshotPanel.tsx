@@ -10,7 +10,7 @@ const DEFAULT_FPS = 5;
 
 export function ScreenshotPanel() {
   const { t } = useTranslation();
-  const { activeInstanceId } = useAppStore();
+  const { activeInstanceId, instanceConnectionStatus } = useAppStore();
   
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -160,6 +160,17 @@ export function ScreenshotPanel() {
       setIsStreaming(false);
     }
   }, [isCollapsed, isStreaming]);
+
+  // 连接成功后自动开始实时截图
+  const connectionStatus = instanceId ? instanceConnectionStatus[instanceId] : undefined;
+  useEffect(() => {
+    if (connectionStatus === 'Connected' && !isStreaming && !isCollapsed && instanceId) {
+      streamingRef.current = true;
+      setIsStreaming(true);
+      setError(null);
+      streamLoop();
+    }
+  }, [connectionStatus, instanceId, isCollapsed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="bg-bg-secondary rounded-lg border border-border">
