@@ -33,6 +33,7 @@ export function ConnectionPanel() {
     language,
     interfaceTranslations,
     activeInstanceId,
+    instances,
     cachedAdbDevices,
     cachedWin32Windows,
     setCachedAdbDevices,
@@ -41,8 +42,19 @@ export function ConnectionPanel() {
     selectedResource,
     setSelectedController,
     setSelectedResource,
+    instanceConnectionStatus,
+    instanceResourceLoaded,
     setInstanceConnectionStatus,
+    setInstanceResourceLoaded,
+    setInstanceSavedDevice,
   } = useAppStore();
+  
+  // 获取当前活动实例
+  const activeInstance = instances.find(i => i.id === activeInstanceId);
+  
+  // 获取当前实例的连接和资源状态（从 store）
+  const storedConnectionStatus = activeInstanceId ? instanceConnectionStatus[activeInstanceId] : undefined;
+  const storedResourceLoaded = activeInstanceId ? instanceResourceLoaded[activeInstanceId] : false;
 
   // 折叠状态
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -55,7 +67,10 @@ export function ConnectionPanel() {
   const [selectedAdbDevice, setSelectedAdbDevice] = useState<AdbDevice | null>(null);
   const [selectedWindow, setSelectedWindow] = useState<Win32Window | null>(null);
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false);
-  const [playcoverAddress, setPlaycoverAddress] = useState('127.0.0.1:1717');
+  // PlayCover 地址从保存的配置初始化
+  const [playcoverAddress, setPlaycoverAddress] = useState(
+    activeInstance?.savedDevice?.playcoverAddress || '127.0.0.1:1717'
+  );
 
   // 资源相关状态
   const [isLoadingResource, setIsLoadingResource] = useState(false);
@@ -86,6 +101,57 @@ export function ConnectionPanel() {
       setIsCollapsed(true);
     }
   }, [isConnected, isResourceLoaded]);
+  
+  // 当实例切换时，重置和恢复状态
+  useEffect(() => {
+    // 从 store 恢复连接状态
+    const isInstanceConnected = storedConnectionStatus === 'Connected';
+    const isInstanceResourceLoaded = storedResourceLoaded;
+    
+    setIsConnected(isInstanceConnected);
+    setIsResourceLoaded(isInstanceResourceLoaded);
+    
+    // 重置临时状态
+    setIsSearching(false);
+    setIsConnecting(false);
+    setIsLoadingResource(false);
+    setDeviceError(null);
+    setResourceError(null);
+    setShowDeviceDropdown(false);
+    setShowResourceDropdown(false);
+    
+    // 从缓存的设备列表中恢复选中的设备
+    const savedDevice = activeInstance?.savedDevice;
+    if (savedDevice?.adbDeviceName && cachedAdbDevices.length > 0) {
+      // 从缓存中找到匹配的 ADB 设备
+      const matchedDevice = cachedAdbDevices.find(d => d.name === savedDevice.adbDeviceName);
+      setSelectedAdbDevice(matchedDevice || null);
+    } else {
+      setSelectedAdbDevice(null);
+    }
+    
+    if (savedDevice?.windowName && cachedWin32Windows.length > 0) {
+      // 从缓存中找到匹配的窗口
+      const matchedWindow = cachedWin32Windows.find(w => w.window_name === savedDevice.windowName);
+      setSelectedWindow(matchedWindow || null);
+    } else {
+      setSelectedWindow(null);
+    }
+    
+    // 恢复 PlayCover 地址
+    if (savedDevice?.playcoverAddress) {
+      setPlaycoverAddress(savedDevice.playcoverAddress);
+    } else {
+      setPlaycoverAddress('127.0.0.1:1717');
+    }
+    
+    // 如果已连接但未展开，自动折叠
+    if (isInstanceConnected && isInstanceResourceLoaded) {
+      setIsCollapsed(true);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [activeInstanceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 判断是否需要搜索设备（PlayCover 不需要搜索）
   const needsDeviceSearch = controllerType === 'Adb' || controllerType === 'Win32' || controllerType === 'Gamepad';
@@ -145,18 +211,54 @@ export function ConnectionPanel() {
         throw new Error(t('maa.initFailed'));
       }
       
+      const savedDevice = activeInstance?.savedDevice;
+      
       if (controllerType === 'Adb') {
         const devices = await maaService.findAdbDevices();
         setCachedAdbDevices(devices);
-        if (devices.length === 1) setSelectedAdbDevice(devices[0]);
-        if (devices.length > 0) setShowDeviceDropdown(true);
+        
+        // 尝试自动匹配保存的设备名称
+        let autoSelected: AdbDevice | null = null;
+        if (savedDevice?.adbDeviceName) {
+          const matched = devices.filter(d => d.name === savedDevice.adbDeviceName);
+          if (matched.length === 1) {
+            autoSelected = matched[0];
+          }
+        }
+        
+        if (autoSelected) {
+          // 自动选中并连接
+          handleSelectAdbDevice(autoSelected);
+        } else if (devices.length === 1) {
+          setSelectedAdbDevice(devices[0]);
+          setShowDeviceDropdown(true);
+        } else if (devices.length > 0) {
+          setShowDeviceDropdown(true);
+        }
       } else if (controllerType === 'Win32' || controllerType === 'Gamepad') {
         const classRegex = currentController.win32?.class_regex || currentController.gamepad?.class_regex;
         const windowRegex = currentController.win32?.window_regex || currentController.gamepad?.window_regex;
         const windows = await maaService.findWin32Windows(classRegex, windowRegex);
         setCachedWin32Windows(windows);
-        if (windows.length === 1) setSelectedWindow(windows[0]);
-        if (windows.length > 0) setShowDeviceDropdown(true);
+        
+        // 尝试自动匹配保存的窗口名称
+        let autoSelected: Win32Window | null = null;
+        if (savedDevice?.windowName) {
+          const matched = windows.filter(w => w.window_name === savedDevice.windowName);
+          if (matched.length === 1) {
+            autoSelected = matched[0];
+          }
+        }
+        
+        if (autoSelected) {
+          // 自动选中并连接
+          handleSelectWindow(autoSelected);
+        } else if (windows.length === 1) {
+          setSelectedWindow(windows[0]);
+          setShowDeviceDropdown(true);
+        } else if (windows.length > 0) {
+          setShowDeviceDropdown(true);
+        }
       }
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : t('controller.connectionFailed'));
@@ -200,6 +302,8 @@ export function ConnectionPanel() {
           keyboard_method: parseWin32InputMethod(currentController.win32?.keyboard || ''),
         };
       } else if (controllerType === 'PlayCover') {
+        // 保存 PlayCover 地址到实例配置
+        setInstanceSavedDevice(instanceId, { playcoverAddress });
         config = {
           type: 'PlayCover',
           address: playcoverAddress,
@@ -241,9 +345,11 @@ export function ConnectionPanel() {
       const resourcePaths = currentResource.path.map(p => `${basePath}/${p}`);
       await maaService.loadResource(instanceId, resourcePaths);
       setIsResourceLoaded(true);
+      setInstanceResourceLoaded(instanceId, true);
     } catch (err) {
       setResourceError(err instanceof Error ? err.message : t('resource.loadFailed'));
       setIsResourceLoaded(false);
+      setInstanceResourceLoaded(instanceId, false);
     } finally {
       setIsLoadingResource(false);
     }
@@ -275,6 +381,9 @@ export function ConnectionPanel() {
   const handleSelectAdbDevice = async (device: AdbDevice) => {
     setSelectedAdbDevice(device);
     setShowDeviceDropdown(false);
+    
+    // 保存设备名称到实例配置
+    setInstanceSavedDevice(instanceId, { adbDeviceName: device.name });
     
     // 自动连接
     setIsConnecting(true);
@@ -320,6 +429,9 @@ export function ConnectionPanel() {
   const handleSelectWindow = async (win: Win32Window) => {
     setSelectedWindow(win);
     setShowDeviceDropdown(false);
+    
+    // 保存窗口名称到实例配置
+    setInstanceSavedDevice(instanceId, { windowName: win.window_name });
     
     // 自动连接
     setIsConnecting(true);
@@ -490,6 +602,7 @@ export function ConnectionPanel() {
                       }
                       setSelectedController(instanceId, controller.name);
                       setIsConnected(false);
+                      setInstanceConnectionStatus(instanceId, 'Disconnected');
                       setSelectedAdbDevice(null);
                       setSelectedWindow(null);
                     }}
@@ -641,19 +754,15 @@ export function ConnectionPanel() {
           {/* 分隔线 */}
           <div className="border-t border-border" />
 
-          {/* 资源选择 - 标题、下拉框、加载按钮同一行 */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-xs text-text-secondary flex-shrink-0">
-              <FolderOpen className="w-4 h-4" />
-              <span>{t('resource.title')}</span>
-            </div>
+          {/* 资源选择 - 下拉框和加载按钮，与设备选择对齐 */}
+          <div className="flex gap-2">
             {/* 资源下拉框 */}
             <div className="relative flex-1 min-w-0">
               <button
                 onClick={() => setShowResourceDropdown(!showResourceDropdown)}
                 disabled={isLoadingResource || isResourceLoaded}
                 className={clsx(
-                  'w-full flex items-center justify-between px-2 py-1 rounded-md border transition-colors text-sm',
+                  'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border transition-colors text-sm',
                   'bg-bg-tertiary border-border',
                   isResourceLoaded
                     ? 'opacity-60 cursor-not-allowed'
@@ -684,6 +793,7 @@ export function ConnectionPanel() {
                         setSelectedResource(instanceId, resource.name);
                         setShowResourceDropdown(false);
                         setIsResourceLoaded(false);
+                        setInstanceResourceLoaded(instanceId, false);
                       }}
                       className={clsx(
                         'w-full flex items-center justify-between px-2.5 py-1.5 text-left transition-colors',
@@ -710,23 +820,26 @@ export function ConnectionPanel() {
               )}
             </div>
 
-            {/* 加载资源按钮 */}
+            {/* 加载资源按钮 - 与刷新按钮保持一致的尺寸 */}
             <button
               onClick={handleLoadResource}
               disabled={isLoadingResource || isResourceLoaded || !currentResource}
               className={clsx(
-                'flex items-center justify-center p-1.5 rounded-md transition-colors',
-                isLoadingResource || isResourceLoaded || !currentResource
-                  ? 'bg-accent/50 text-white/70 cursor-not-allowed'
-                  : 'bg-accent text-white hover:bg-accent-hover'
+                'flex items-center justify-center px-3 py-1.5 rounded-md border transition-colors',
+                isResourceLoaded
+                  ? 'bg-green-500/20 border-green-500/50 cursor-not-allowed'
+                  : isLoadingResource || !currentResource
+                  ? 'bg-bg-tertiary border-border opacity-50 cursor-not-allowed'
+                  : 'bg-accent border-accent text-white hover:bg-accent-hover'
               )}
+              title={t('resource.load')}
             >
               {isLoadingResource ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-text-secondary" />
               ) : isResourceLoaded ? (
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
               ) : (
-                <FolderOpen className="w-4 h-4" />
+                <FolderOpen className="w-3.5 h-3.5" />
               )}
             </button>
           </div>

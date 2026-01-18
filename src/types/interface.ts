@@ -153,12 +153,24 @@ export type OptionValue =
   | { type: 'switch'; value: boolean }
   | { type: 'input'; values: Record<string, string> };
 
+// 保存的设备信息（运行时使用）
+export interface SavedDeviceInfo {
+  adbDeviceName?: string;
+  windowName?: string;
+  playcoverAddress?: string;
+}
+
 // 多开实例状态
 export interface Instance {
   id: string;
   name: string;
   controllerId?: string;
   resourceId?: string;
+  // 保存的控制器和资源名称
+  controllerName?: string;
+  resourceName?: string;
+  // 保存的设备信息
+  savedDevice?: SavedDeviceInfo;
   selectedTasks: SelectedTask[];
   isRunning: boolean;
 }

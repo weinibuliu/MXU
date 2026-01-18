@@ -13,11 +13,16 @@ const DEFAULT_FPS = 5;
 
 export function ScreenshotPanel() {
   const { t } = useTranslation();
-  const { activeInstanceId, instanceConnectionStatus, sidePanelExpanded } = useAppStore();
+  const {
+    activeInstanceId,
+    instanceConnectionStatus,
+    sidePanelExpanded,
+    instanceScreenshotStreaming,
+    setInstanceScreenshotStreaming,
+  } = useAppStore();
   
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
@@ -27,6 +32,16 @@ export function ScreenshotPanel() {
   const frameIntervalRef = useRef(1000 / DEFAULT_FPS);
   
   const instanceId = activeInstanceId || '';
+  
+  // 从 store 获取当前实例的截图流状态
+  const isStreaming = instanceId ? (instanceScreenshotStreaming[instanceId] ?? false) : false;
+  
+  // 更新截图流状态
+  const setIsStreaming = useCallback((streaming: boolean) => {
+    if (instanceId) {
+      setInstanceScreenshotStreaming(instanceId, streaming);
+    }
+  }, [instanceId, setInstanceScreenshotStreaming]);
 
   // 获取单帧截图（任务未运行时使用）
   const captureFrame = useCallback(async (): Promise<string | null> => {
@@ -92,7 +107,16 @@ export function ScreenshotPanel() {
 
   // 截图流循环
   const streamLoop = useCallback(async () => {
+    // 保存启动时的实例 ID，用于检查是否仍是活动实例
+    const loopInstanceId = instanceId;
+    
     while (streamingRef.current) {
+      // 检查当前实例是否仍是活动实例，避免非活动 tab 刷新截图
+      const currentActiveId = useAppStore.getState().activeInstanceId;
+      if (loopInstanceId !== currentActiveId) {
+        break;
+      }
+      
       const now = Date.now();
       const elapsed = now - lastFrameTimeRef.current;
       
@@ -106,7 +130,7 @@ export function ScreenshotPanel() {
       
       try {
         // 检查任务是否正在运行
-        const isRunning = await maaService.isRunning(instanceId);
+        const isRunning = await maaService.isRunning(loopInstanceId);
         
         let imageData: string | null = null;
         
@@ -118,7 +142,8 @@ export function ScreenshotPanel() {
           imageData = await captureFrame();
         }
         
-        if (imageData && streamingRef.current) {
+        // 再次检查是否仍是活动实例，避免更新非活动 tab 的截图
+        if (imageData && streamingRef.current && loopInstanceId === useAppStore.getState().activeInstanceId) {
           setScreenshotUrl(imageData);
           setError(null);
         }
@@ -132,7 +157,7 @@ export function ScreenshotPanel() {
   }, [instanceId, captureFrame, getCachedFrame]);
 
   // 开始/停止截图流
-  const toggleStreaming = (e?: React.MouseEvent) => {
+  const toggleStreaming = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     
     if (!instanceId) return;
@@ -148,33 +173,52 @@ export function ScreenshotPanel() {
       setError(null);
       streamLoop();
     }
-  };
+  }, [instanceId, isStreaming, setIsStreaming, streamLoop]);
 
-  // 组件卸载或 instanceId 变化时停止流
+  // 实例切换时重置截图和错误，但保留截图流状态
   useEffect(() => {
-    return () => {
-      streamingRef.current = false;
-    };
-  }, [instanceId]);
-
-  // 面板折叠或被隐藏时停止流
-  useEffect(() => {
-    if ((isCollapsed || !sidePanelExpanded) && isStreaming) {
-      streamingRef.current = false;
-      setIsStreaming(false);
+    // 清除截图，等待新实例的截图
+    setScreenshotUrl(null);
+    setError(null);
+    
+    // 同步 streamingRef 与新实例的截图流状态
+    const newInstanceStreaming = instanceId ? (instanceScreenshotStreaming[instanceId] ?? false) : false;
+    streamingRef.current = newInstanceStreaming;
+    
+    // 如果新实例的截图流是开启的，启动流循环
+    if (newInstanceStreaming && instanceId) {
+      streamLoop();
     }
-  }, [isCollapsed, isStreaming, sidePanelExpanded]);
+  }, [instanceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 连接成功后自动开始实时截图（仅当面板可见时）
-  const connectionStatus = instanceId ? instanceConnectionStatus[instanceId] : undefined;
+  // 面板折叠或被隐藏时停止流（但不改变 store 中的状态，只停止实际的流循环）
   useEffect(() => {
-    if (connectionStatus === 'Connected' && !isStreaming && !isCollapsed && sidePanelExpanded && instanceId) {
+    if (isCollapsed || !sidePanelExpanded) {
+      streamingRef.current = false;
+    } else if (isStreaming && instanceId) {
+      // 面板重新展开时，如果状态是开启的，恢复流
+      streamingRef.current = true;
+      streamLoop();
+    }
+  }, [isCollapsed, sidePanelExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 连接成功后自动开始实时截图（仅当面板可见且未开启时）
+  const connectionStatus = instanceId ? instanceConnectionStatus[instanceId] : undefined;
+  const prevConnectionStatusRef = useRef<typeof connectionStatus>(undefined);
+  
+  useEffect(() => {
+    // 检测连接状态从非 Connected 变为 Connected
+    const wasConnected = prevConnectionStatusRef.current === 'Connected';
+    const isConnected = connectionStatus === 'Connected';
+    prevConnectionStatusRef.current = connectionStatus;
+    
+    if (isConnected && !wasConnected && !isStreaming && !isCollapsed && sidePanelExpanded && instanceId) {
       streamingRef.current = true;
       setIsStreaming(true);
       setError(null);
       streamLoop();
     }
-  }, [connectionStatus, instanceId, isCollapsed, sidePanelExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [connectionStatus, instanceId, isCollapsed, sidePanelExpanded, isStreaming, setIsStreaming, streamLoop]);
 
   return (
     <div className="bg-bg-secondary rounded-lg border border-border">

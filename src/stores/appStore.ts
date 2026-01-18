@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { ProjectInterface, Instance, SelectedTask, OptionValue, TaskItem, OptionDefinition } from '@/types/interface';
+import type { ProjectInterface, Instance, SelectedTask, OptionValue, TaskItem, OptionDefinition, SavedDeviceInfo } from '@/types/interface';
 import type { MxuConfig } from '@/types/config';
 import type { ConnectionStatus, TaskStatus, AdbDevice, Win32Window } from '@/types/maa';
 import { saveConfig } from '@/services/configService';
@@ -31,6 +31,7 @@ interface AppState {
   // 多开实例
   instances: Instance[];
   activeInstanceId: string | null;
+  nextInstanceNumber: number;  // 递增计数器，确保实例名字编号不重复
   createInstance: (name?: string) => string;
   removeInstance: (id: string) => void;
   setActiveInstance: (id: string) => void;
@@ -77,17 +78,24 @@ interface AppState {
   setInstanceCurrentTaskId: (instanceId: string, taskId: number | null) => void;
   setInstanceTaskStatus: (instanceId: string, status: TaskStatus | null) => void;
   
-  // 选中的控制器和资源
+  // 选中的控制器和资源（运行时状态，与 Instance 中的保持同步）
   selectedController: Record<string, string>;
   selectedResource: Record<string, string>;
-  setSelectedController: (instanceId: string, controllerId: string) => void;
-  setSelectedResource: (instanceId: string, resourceId: string) => void;
+  setSelectedController: (instanceId: string, controllerName: string) => void;
+  setSelectedResource: (instanceId: string, resourceName: string) => void;
+  
+  // 设备信息保存
+  setInstanceSavedDevice: (instanceId: string, savedDevice: SavedDeviceInfo) => void;
 
   // 设备列表缓存（避免切换页面时丢失）
   cachedAdbDevices: AdbDevice[];
   cachedWin32Windows: Win32Window[];
   setCachedAdbDevices: (devices: AdbDevice[]) => void;
   setCachedWin32Windows: (windows: Win32Window[]) => void;
+  
+  // 截图流状态（按实例独立）
+  instanceScreenshotStreaming: Record<string, boolean>;
+  setInstanceScreenshotStreaming: (instanceId: string, streaming: boolean) => void;
 
   // 右侧面板折叠状态（控制连接设置和截图面板的显示）
   sidePanelExpanded: boolean;
@@ -154,10 +162,11 @@ export const useAppStore = create<AppState>()(
       // 多开实例
       instances: [],
       activeInstanceId: null,
+      nextInstanceNumber: 1,
       
       createInstance: (name) => {
         const id = generateId();
-        const instanceCount = get().instances.length;
+        const instanceNumber = get().nextInstanceNumber;
         const pi = get().projectInterface;
         
         // 初始化默认选中的任务
@@ -183,14 +192,15 @@ export const useAppStore = create<AppState>()(
         
         const newInstance: Instance = {
           id,
-          name: name || `多开 ${instanceCount + 1}`,
+          name: name || `多开 ${instanceNumber}`,
           selectedTasks: defaultTasks,
           isRunning: false,
         };
         
         set((state) => ({
           instances: [...state.instances, newInstance],
-          activeInstanceId: state.activeInstanceId || id,
+          activeInstanceId: id,
+          nextInstanceNumber: state.nextInstanceNumber + 1,
         }));
         
         return id;
@@ -376,6 +386,9 @@ export const useAppStore = create<AppState>()(
           name: inst.name,
           controllerId: inst.controllerId,
           resourceId: inst.resourceId,
+          controllerName: inst.controllerName,
+          resourceName: inst.resourceName,
+          savedDevice: inst.savedDevice,
           selectedTasks: inst.tasks.map(t => ({
             id: t.id,
             taskName: t.taskName,
@@ -387,11 +400,35 @@ export const useAppStore = create<AppState>()(
           isRunning: false,
         }));
         
+        // 恢复选中的控制器和资源状态
+        const selectedController: Record<string, string> = {};
+        const selectedResource: Record<string, string> = {};
+        instances.forEach(inst => {
+          if (inst.controllerName) {
+            selectedController[inst.id] = inst.controllerName;
+          }
+          if (inst.resourceName) {
+            selectedResource[inst.id] = inst.resourceName;
+          }
+        });
+        
+        // 根据已有实例名字计算下一个编号，避免重复
+        let maxNumber = 0;
+        instances.forEach(inst => {
+          const match = inst.name.match(/^多开\s*(\d+)$/);
+          if (match) {
+            maxNumber = Math.max(maxNumber, parseInt(match[1], 10));
+          }
+        });
+        
         set({
           instances,
           activeInstanceId: instances.length > 0 ? instances[0].id : null,
           theme: config.settings.theme,
           language: config.settings.language,
+          selectedController,
+          selectedResource,
+          nextInstanceNumber: maxNumber + 1,
         });
         
         document.documentElement.classList.toggle('dark', config.settings.theme === 'dark');
@@ -444,18 +481,33 @@ export const useAppStore = create<AppState>()(
       selectedController: {},
       selectedResource: {},
 
-      setSelectedController: (instanceId, controllerId) => set((state) => ({
+      setSelectedController: (instanceId, controllerName) => set((state) => ({
         selectedController: {
           ...state.selectedController,
-          [instanceId]: controllerId,
+          [instanceId]: controllerName,
         },
+        // 同时更新 Instance 中的 controllerName
+        instances: state.instances.map(i =>
+          i.id === instanceId ? { ...i, controllerName } : i
+        ),
       })),
 
-      setSelectedResource: (instanceId, resourceId) => set((state) => ({
+      setSelectedResource: (instanceId, resourceName) => set((state) => ({
         selectedResource: {
           ...state.selectedResource,
-          [instanceId]: resourceId,
+          [instanceId]: resourceName,
         },
+        // 同时更新 Instance 中的 resourceName
+        instances: state.instances.map(i =>
+          i.id === instanceId ? { ...i, resourceName } : i
+        ),
+      })),
+      
+      // 保存设备信息到实例
+      setInstanceSavedDevice: (instanceId, savedDevice) => set((state) => ({
+        instances: state.instances.map(i =>
+          i.id === instanceId ? { ...i, savedDevice } : i
+        ),
       })),
 
       // 设备列表缓存
@@ -463,6 +515,15 @@ export const useAppStore = create<AppState>()(
       cachedWin32Windows: [],
       setCachedAdbDevices: (devices) => set({ cachedAdbDevices: devices }),
       setCachedWin32Windows: (windows) => set({ cachedWin32Windows: windows }),
+      
+      // 截图流状态
+      instanceScreenshotStreaming: {},
+      setInstanceScreenshotStreaming: (instanceId, streaming) => set((state) => ({
+        instanceScreenshotStreaming: {
+          ...state.instanceScreenshotStreaming,
+          [instanceId]: streaming,
+        },
+      })),
 
       // 右侧面板折叠状态
       sidePanelExpanded: true,
@@ -482,6 +543,9 @@ function generateConfig(): MxuConfig {
       name: inst.name,
       controllerId: inst.controllerId,
       resourceId: inst.resourceId,
+      controllerName: inst.controllerName,
+      resourceName: inst.resourceName,
+      savedDevice: inst.savedDevice,
       tasks: inst.selectedTasks.map(t => ({
         id: t.id,
         taskName: t.taskName,

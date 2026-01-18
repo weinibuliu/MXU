@@ -11,12 +11,27 @@ export interface SavedTask {
   optionValues: Record<string, OptionValue>;
 }
 
+// 保存的设备信息
+export interface SavedDeviceInfo {
+  // ADB 设备：保存设备名称
+  adbDeviceName?: string;
+  // Win32/Gamepad：保存窗口名称
+  windowName?: string;
+  // PlayCover：保存地址
+  playcoverAddress?: string;
+}
+
 // 保存的实例配置
 export interface SavedInstance {
   id: string;
   name: string;
   controllerId?: string;
   resourceId?: string;
+  // 保存的控制器和资源名称
+  controllerName?: string;
+  resourceName?: string;
+  // 保存的设备信息，用于自动重连
+  savedDevice?: SavedDeviceInfo;
   tasks: SavedTask[];
 }
 
