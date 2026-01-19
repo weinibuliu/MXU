@@ -111,6 +111,10 @@ jobs:
   linux:
     needs: meta
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64]
+      fail-fast: false
 
     steps:
       - name: Checkout
