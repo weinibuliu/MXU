@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, X, Settings, Sun, Moon, Check, LayoutGrid, Copy, Edit3, XCircle, GripVertical, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PanelRightClose, Bell, Clock } from 'lucide-react';
+import { Plus, X, Settings, Sun, Moon, Check, LayoutGrid, Copy, Edit3, XCircle, GripVertical, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PanelRightClose, Bell, History } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { ContextMenu, useContextMenu, type MenuItem } from './ContextMenu';
 import { UpdatePanel } from './UpdatePanel';
@@ -379,7 +379,7 @@ export function TabBar() {
           )}
           title={t('recentlyClosed.title')}
         >
-          <Clock className="w-4 h-4" />
+          <History className="w-4 h-4" />
         </button>
         <button
           onClick={toggleDashboardView}

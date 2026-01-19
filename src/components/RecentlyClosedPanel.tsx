@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Clock, RotateCcw, Trash2, Gamepad2, Package, ListChecks } from 'lucide-react';
+import { X, History, RotateCcw, Trash2, Gamepad2, Package, ListChecks } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import type { RecentlyClosedInstance } from '@/types/config';
 import clsx from 'clsx';
@@ -133,7 +133,7 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
       {/* 标题栏 */}
       <div className="flex items-center justify-between px-4 py-3 bg-bg-tertiary border-b border-border">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-text-secondary" />
+          <History className="w-4 h-4 text-text-secondary" />
           <span className="text-sm font-medium text-text-primary">
             {t('recentlyClosed.title')}
           </span>
@@ -166,7 +166,7 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
       <div className="max-h-80 overflow-y-auto">
         {recentlyClosed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-text-muted">
-            <Clock className="w-8 h-8 mb-2 opacity-50" />
+            <History className="w-8 h-8 mb-2 opacity-50" />
             <span className="text-sm">{t('recentlyClosed.empty')}</span>
           </div>
         ) : (
