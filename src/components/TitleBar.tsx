@@ -160,7 +160,11 @@ export function TitleBar() {
             className="w-12 h-full flex items-center justify-center text-text-secondary hover:bg-bg-hover transition-colors"
             title={isMaximized ? t('windowControls.restore') : t('windowControls.maximize')}
           >
-            {isMaximized ? <Copy className="w-3.5 h-3.5 rotate-180" /> : <Square className="w-3 h-3" />}
+            {isMaximized ? (
+              <Copy className="w-3.5 h-3.5 rotate-180" />
+            ) : (
+              <Square className="w-3 h-3" />
+            )}
           </button>
           <button
             onClick={handleClose}
