@@ -63,6 +63,10 @@ export function TabBar() {
     downloadStatus,
     showUpdateDialog,
     setShowUpdateDialog,
+    animatingTabIds,
+    closingTabIds,
+    removeAnimatingTabId,
+    startTabCloseAnimation,
   } = useAppStore();
 
   // 使用全局状态控制更新面板显示
@@ -85,7 +89,7 @@ export function TabBar() {
   const handleCloseTab = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (instances.length > 1) {
-      removeInstance(id);
+      startTabCloseAnimation(id);
     }
   };
 
@@ -186,7 +190,7 @@ export function TabBar() {
           label: t('contextMenu.closeTab'),
           icon: X,
           disabled: instances.length <= 1,
-          onClick: () => removeInstance(instanceId),
+          onClick: () => startTabCloseAnimation(instanceId),
         },
         {
           id: 'close-others',
@@ -196,7 +200,7 @@ export function TabBar() {
           onClick: () => {
             instances.forEach((inst) => {
               if (inst.id !== instanceId) {
-                removeInstance(inst.id);
+                startTabCloseAnimation(inst.id);
               }
             });
           },
@@ -208,7 +212,7 @@ export function TabBar() {
           disabled: instanceIndex >= instances.length - 1,
           onClick: () => {
             instances.slice(instanceIndex + 1).forEach((inst) => {
-              removeInstance(inst.id);
+              startTabCloseAnimation(inst.id);
             });
           },
         },
@@ -276,7 +280,11 @@ export function TabBar() {
     <div className="flex items-center h-10 bg-bg-secondary border-b border-border select-none">
       {/* 标签页区域 */}
       <div className="flex-1 flex items-center h-full overflow-x-auto">
-        {instances.map((instance, index) => (
+        {instances.map((instance, index) => {
+          const isAnimatingIn = animatingTabIds.includes(instance.id);
+          const isClosing = closingTabIds.includes(instance.id);
+
+          return (
           <div
             key={instance.id}
             ref={(el) => {
@@ -284,11 +292,16 @@ export function TabBar() {
               else tabRefs.current.delete(instance.id);
             }}
             onMouseDown={(e) => handleMouseDown(e, index)}
-            onClick={() => setActiveInstance(instance.id)}
+            onClick={() => !isClosing && setActiveInstance(instance.id)}
             onDoubleClick={(e) => handleDoubleClick(e, instance.id, instance.name)}
             onContextMenu={(e) => handleTabContextMenu(e, instance.id, instance.name)}
+            onAnimationEnd={() => {
+              if (isAnimatingIn) {
+                removeAnimatingTabId(instance.id);
+              }
+            }}
             className={clsx(
-              'group flex items-center gap-1 h-full px-2 cursor-pointer border-r border-border transition-all min-w-[120px] max-w-[200px]',
+              'group flex items-center gap-1 h-full px-2 cursor-pointer border-r border-border min-w-[120px] max-w-[200px]',
               instance.id === activeInstanceId
                 ? 'bg-bg-primary text-accent border-b-2 border-b-accent'
                 : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover border-b-2 border-b-transparent',
@@ -296,6 +309,9 @@ export function TabBar() {
               dragState.isDragging &&
                 dragState.dragOverIndex === index &&
                 'border-l-2 border-l-accent',
+              isAnimatingIn && 'tab-fade-in',
+              isClosing && 'tab-fade-out',
+              !isAnimatingIn && !isClosing && 'transition-all',
             )}
           >
             {/* 拖拽手柄 - 仅多标签时显示 */}
@@ -349,7 +365,7 @@ export function TabBar() {
                 <span className="flex-1 truncate text-sm" title={t('titleBar.renameInstance')}>
                   {instance.name}
                 </span>
-                {instances.length > 1 && (
+                {instances.length > 1 && !isClosing && (
                   <button
                     onClick={(e) => handleCloseTab(e, instance.id)}
                     className={clsx(
@@ -364,7 +380,8 @@ export function TabBar() {
               </>
             )}
           </div>
-        ))}
+        );
+        })}
 
         {/* 新建标签按钮 */}
         <button

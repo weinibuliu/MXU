@@ -73,6 +73,8 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
     registerEntryTaskName,
     // 日志
     addLog,
+    // 添加任务面板
+    setShowAddTaskPanel,
   } = useAppStore();
 
   const [isStarting, setIsStarting] = useState(false);
@@ -689,6 +691,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
 
         updateInstance(targetId, { isRunning: true });
         setInstanceTaskStatus(targetId, 'Running');
+        setShowAddTaskPanel(false);
 
         // 如果是定时执行，记录状态
         if (schedulePolicyName) {
@@ -706,6 +709,9 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
         // 初始化任务运行状态
         const enabledTaskIds = enabledTasks.map((t) => t.id);
         setAllTasksRunStatus(targetId, enabledTaskIds, 'pending');
+
+        // 开始任务时折叠所有任务
+        collapseAllTasks(targetId, false);
 
         // 记录映射关系，并注册 task_id 与任务名的映射用于日志显示
         taskIds.forEach((maaTaskId, index) => {
@@ -770,6 +776,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
       clearPendingTasks,
       setScheduleExecution,
       clearScheduleExecution,
+      setShowAddTaskPanel,
     ],
   );
 
@@ -999,6 +1006,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
 
         updateInstance(instance.id, { isRunning: true });
         setInstanceTaskStatus(instance.id, 'Running');
+        setShowAddTaskPanel(false);
 
         // 启动任务（支持 Agent）
         const taskIds = await maaService.startTasks(
@@ -1013,6 +1021,9 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
         // 初始化任务运行状态：所有启用的任务设为 pending
         const enabledTaskIds = enabledTasks.map((t) => t.id);
         setAllTasksRunStatus(instance.id, enabledTaskIds, 'pending');
+
+        // 开始任务时折叠所有任务
+        collapseAllTasks(instance.id, false);
 
         // 记录 maaTaskId -> selectedTaskId 的映射关系，并注册 task_id 与任务名的映射
         taskIds.forEach((maaTaskId, index) => {

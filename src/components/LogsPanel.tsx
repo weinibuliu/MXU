@@ -161,11 +161,12 @@ export function LogsPanel() {
             )}
             title={sidePanelExpanded ? t('logs.collapse') : t('logs.expand')}
           >
-            {sidePanelExpanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
+            <ChevronDown
+              className={clsx(
+                'w-4 h-4 transition-transform duration-150 ease-out',
+                sidePanelExpanded && 'rotate-180',
+              )}
+            />
           </button>
           {/* 打开日志目录 */}
           <button

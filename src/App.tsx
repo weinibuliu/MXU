@@ -122,12 +122,19 @@ async function getWindowSize(): Promise<{ width: number; height: number } | null
   return null;
 }
 
+// 页面过渡动画时长（ms）
+const PAGE_TRANSITION_DURATION = 120;
+
 function App() {
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [versionWarning, setVersionWarning] = useState<{ current: string; minimum: string } | null>(
     null,
   );
+
+  // 页面过渡状态
+  const [isSettingsExiting, setIsSettingsExiting] = useState(false);
+  const [isDashboardExiting, setIsDashboardExiting] = useState(false);
 
   const { t } = useTranslation();
 
@@ -144,11 +151,13 @@ function App() {
     createInstance,
     theme,
     currentPage,
+    setCurrentPage,
     projectInterface,
     interfaceTranslations,
     language,
     sidePanelExpanded,
     dashboardView,
+    setDashboardView,
     setWindowSize: setWindowSizeStore,
     setUpdateInfo,
     restoreBackendStates,
@@ -167,6 +176,24 @@ function App() {
     setRightPanelWidth: _setRightPanelWidth,
     setRightPanelCollapsed: _setRightPanelCollapsed,
   } = useAppStore();
+
+  // 带退出动画的设置页面关闭
+  const closeSettingsWithAnimation = useCallback(() => {
+    setIsSettingsExiting(true);
+    setTimeout(() => {
+      setCurrentPage('main');
+      setIsSettingsExiting(false);
+    }, PAGE_TRANSITION_DURATION);
+  }, [setCurrentPage]);
+
+  // 带退出动画的中控台关闭
+  const closeDashboardWithAnimation = useCallback(() => {
+    setIsDashboardExiting(true);
+    setTimeout(() => {
+      setDashboardView(false);
+      setIsDashboardExiting(false);
+    }, PAGE_TRANSITION_DURATION);
+  }, [setDashboardView]);
 
   const isResizingRef = useRef(false);
 
@@ -672,7 +699,12 @@ function App() {
         <TitleBar />
         {/* 安装确认模态框 - 在设置页面也需要能弹出 */}
         <InstallConfirmModal />
-        <SettingsPage />
+        <div
+          key="settings-page"
+          className={`flex-1 min-h-0 flex flex-col ${isSettingsExiting ? 'page-slide-right-exit' : 'page-slide-right-enter'}`}
+        >
+          <SettingsPage onClose={closeSettingsWithAnimation} />
+        </div>
       </div>
     );
   }
@@ -800,10 +832,15 @@ function App() {
 
       {/* 中控台视图 */}
       {dashboardView ? (
-        <DashboardView />
+        <div
+          key="dashboard-view"
+          className={`flex-1 min-h-0 ${isDashboardExiting ? 'page-slide-top-exit' : 'page-slide-top-enter'}`}
+        >
+          <DashboardView onClose={closeDashboardWithAnimation} />
+        </div>
       ) : (
         /* 主内容区 */
-        <div className="flex-1 flex overflow-hidden">
+        <div key="main-view" className="flex-1 flex overflow-hidden">
           {/* 左侧任务列表区 */}
           <div
             className="flex-1 flex flex-col border-r border-border"
@@ -812,8 +849,15 @@ function App() {
             {/* 任务列表 */}
             <TaskList />
 
-            {/* 添加任务面板 */}
-            {showAddTaskPanel && <AddTaskPanel />}
+            {/* 添加任务面板 - 使用 grid 动画实现平滑展开/折叠 */}
+            <div
+              className="grid transition-[grid-template-rows] duration-150 ease-out"
+              style={{ gridTemplateRows: showAddTaskPanel ? '1fr' : '0fr' }}
+            >
+              <div className="overflow-hidden min-h-0">
+                <AddTaskPanel />
+              </div>
+            </div>
 
             {/* 底部工具栏 */}
             <Toolbar
@@ -843,16 +887,19 @@ function App() {
                 flexShrink: 1,
               }}
             >
-              {/* 连接设置和实时截图（可折叠） */}
-              {sidePanelExpanded && (
-                <>
+              {/* 连接设置和实时截图（可折叠）- 使用 grid 动画 */}
+              <div
+                className="grid transition-[grid-template-rows] duration-150 ease-out"
+                style={{ gridTemplateRows: sidePanelExpanded ? '1fr' : '0fr' }}
+              >
+                <div className="overflow-hidden min-h-0 flex flex-col gap-3">
                   {/* 连接设置（设备/资源选择） */}
                   <ConnectionPanel />
 
                   {/* 实时截图 */}
                   <ScreenshotPanel />
-                </>
-              )}
+                </div>
+              </div>
 
               {/* 运行日志 */}
               <LogsPanel />

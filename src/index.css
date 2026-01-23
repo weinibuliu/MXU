@@ -237,3 +237,118 @@ body {
 .animate-pulse-glow-accent {
   animation: badgeBreathing 2s ease-in-out infinite;
 }
+
+/* Task item slide in animation (from bottom) */
+@keyframes taskSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-task-slide-in {
+  animation: taskSlideIn 0.15s ease-out forwards;
+}
+
+/* Page transition animations */
+
+/* 从右侧滑入（设置页面进入） */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 滑出到右侧（设置页面退出） */
+@keyframes slideOutToRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+/* 从顶部滑入（中控台进入） */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 滑出到顶部（中控台退出） */
+@keyframes slideOutToTop {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+
+.page-slide-right-enter {
+  animation: slideInFromRight 150ms ease-out forwards;
+}
+
+.page-slide-right-exit {
+  animation: slideOutToRight 120ms ease-in forwards;
+}
+
+.page-slide-top-enter {
+  animation: slideInFromTop 150ms ease-out forwards;
+}
+
+.page-slide-top-exit {
+  animation: slideOutToTop 120ms ease-in forwards;
+}
+
+/* Tab animations */
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes tabFadeOut {
+  from {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  to {
+    opacity: 0;
+    transform: scaleX(0.8);
+  }
+}
+
+.tab-fade-in {
+  animation: tabFadeIn 150ms ease-out forwards;
+  transform-origin: left center;
+}
+
+.tab-fade-out {
+  animation: tabFadeOut 120ms ease-in forwards;
+  transform-origin: left center;
+}

@@ -5,7 +5,6 @@ import {
   X,
   Monitor,
   ChevronDown,
-  ChevronUp,
   Play,
   Pause,
   RefreshCw,
@@ -527,17 +526,22 @@ export function ScreenshotPanel() {
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
-          {!screenshotPanelExpanded ? (
-            <ChevronDown className="w-4 h-4 text-text-muted" />
-          ) : (
-            <ChevronUp className="w-4 h-4 text-text-muted" />
-          )}
+          <ChevronDown
+            className={clsx(
+              'w-4 h-4 text-text-muted transition-transform duration-150 ease-out',
+              screenshotPanelExpanded && 'rotate-180',
+            )}
+          />
         </div>
       </div>
 
-      {/* 可折叠内容 */}
-      {screenshotPanelExpanded && (
-        <div className="p-3">
+      {/* 可折叠内容 - 使用 grid 动画实现平滑展开/折叠 */}
+      <div
+        className="grid transition-[grid-template-rows] duration-150 ease-out"
+        style={{ gridTemplateRows: screenshotPanelExpanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="p-3">
           {/* 截图区域 */}
           <div
             className="aspect-video bg-bg-tertiary rounded-md flex items-center justify-center overflow-hidden relative"
@@ -572,8 +576,9 @@ export function ScreenshotPanel() {
               </div>
             )}
           </div>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* 全屏模态框 */}
       {isFullscreen && screenshotUrl && (

@@ -161,6 +161,8 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
     findMaaTaskIdBySelectedTaskId,
     basePath,
     interfaceTranslations,
+    animatingTaskIds,
+    removeAnimatingTaskId,
   } = useAppStore();
 
   // 获取任务运行状态
@@ -182,6 +184,10 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
 
   // 用于追踪选项值变化的 ref（避免首次渲染时触发）
   const prevOptionValuesRef = useRef<string | null>(null);
+
+  // 入场动画状态
+  const isAnimating = animatingTaskIds.includes(task.id);
+  const animationElementRef = useRef<HTMLDivElement | null>(null);
 
   // 当选项值变化且任务状态为 pending 时，调用 overridePipeline 更新任务配置
   useEffect(() => {
@@ -254,6 +260,28 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
     transform: CSS.Transform.toString(constrainedTransform),
     transition,
   };
+
+  // 合并 sortable ref 和动画 ref
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      setNodeRef(node);
+      animationElementRef.current = node;
+    },
+    [setNodeRef],
+  );
+
+  // 动画结束后移除动画状态
+  useEffect(() => {
+    if (!isAnimating || !animationElementRef.current) return;
+
+    const element = animationElementRef.current;
+    const handleAnimationEnd = () => {
+      removeAnimatingTaskId(task.id);
+    };
+
+    element.addEventListener('animationend', handleAnimationEnd);
+    return () => element.removeEventListener('animationend', handleAnimationEnd);
+  }, [isAnimating, task.id, removeAnimatingTaskId]);
 
   if (!taskDef) return null;
 
@@ -496,13 +524,14 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
   if (isCompact) {
     return (
       <div
-        ref={setNodeRef}
+        ref={setRefs}
         style={style}
         onContextMenu={handleContextMenu}
         className={clsx(
           'group bg-bg-secondary/50 rounded-lg border border-border/50 overflow-hidden',
           'transition-all duration-200',
           isDragging && 'shadow-lg opacity-50',
+          isAnimating && 'animate-task-slide-in',
         )}
       >
         <div className="flex items-center gap-2 px-3 py-1.5">
@@ -530,13 +559,14 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
       onContextMenu={handleContextMenu}
       className={clsx(
         'group bg-bg-secondary rounded-lg border border-border overflow-hidden transition-shadow relative',
         isDragging && 'shadow-lg opacity-50',
         taskRunStatus === 'running' && 'task-item-running',
+        isAnimating && 'animate-task-slide-in',
       )}
     >
       {/* 任务状态指示器（左侧竖条） */}
@@ -664,11 +694,12 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
                   )}
                   {/* 展开/折叠箭头 */}
                   <div className="flex items-center justify-end pl-2 ml-auto">
-                    {task.expanded ? (
-                      <ChevronDown className="w-4 h-4 text-text-secondary" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-text-secondary" />
-                    )}
+                    <ChevronRight
+                      className={clsx(
+                        'w-4 h-4 text-text-secondary transition-transform duration-150 ease-out',
+                        task.expanded && 'rotate-90',
+                      )}
+                    />
                   </div>
                 </div>
               )}
@@ -691,36 +722,43 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
         )}
       </div>
 
-      {/* 展开面板（描述和/或选项） */}
-      {canExpand && task.expanded && (
-        <div className="border-t border-border bg-bg-tertiary p-3">
-          {/* 任务描述 */}
-          {hasDescription && (
-            <div className={hasOptions ? 'mb-3' : ''}>
-              <DescriptionContent
-                html={resolvedDescription.html}
-                loading={resolvedDescription.loading}
-                type={resolvedDescription.type}
-                loaded={resolvedDescription.loaded}
-                error={resolvedDescription.error}
-              />
+      {/* 展开面板（描述和/或选项）- 使用 grid 动画实现平滑展开/折叠 */}
+      {canExpand && (
+        <div
+          className="grid transition-[grid-template-rows] duration-150 ease-out"
+          style={{ gridTemplateRows: task.expanded ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden min-h-0">
+            <div className="border-t border-border bg-bg-tertiary p-3">
+              {/* 任务描述 */}
+              {hasDescription && (
+                <div className={hasOptions ? 'mb-3' : ''}>
+                  <DescriptionContent
+                    html={resolvedDescription.html}
+                    loading={resolvedDescription.loading}
+                    type={resolvedDescription.type}
+                    loaded={resolvedDescription.loaded}
+                    error={resolvedDescription.error}
+                  />
+                </div>
+              )}
+              {/* 选项列表 - 仅在有选项时显示 */}
+              {hasOptions && (
+                <div className="space-y-3">
+                  {taskDef.option?.map((optionKey) => (
+                    <OptionEditor
+                      key={optionKey}
+                      instanceId={instanceId}
+                      taskId={task.id}
+                      optionKey={optionKey}
+                      value={task.optionValues[optionKey]}
+                      disabled={!canEditOptions}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-          {/* 选项列表 - 仅在有选项时显示 */}
-          {hasOptions && (
-            <div className="space-y-3">
-              {taskDef.option?.map((optionKey) => (
-                <OptionEditor
-                  key={optionKey}
-                  instanceId={instanceId}
-                  taskId={task.id}
-                  optionKey={optionKey}
-                  value={task.optionValues[optionKey]}
-                  disabled={!canEditOptions}
-                />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       )}
 

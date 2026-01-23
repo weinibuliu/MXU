@@ -117,6 +117,16 @@ interface AppState {
   lastAddedTaskId: string | null;
   clearLastAddedTaskId: () => void;
 
+  // 正在播放入场动画的任务 ID 列表
+  animatingTaskIds: string[];
+  removeAnimatingTaskId: (taskId: string) => void;
+
+  // 标签页动画状态
+  animatingTabIds: string[]; // 正在播放进入动画的标签页
+  closingTabIds: string[]; // 正在播放退出动画的标签页
+  removeAnimatingTabId: (tabId: string) => void;
+  startTabCloseAnimation: (tabId: string) => void;
+
   // 新增任务名称列表（interface.json 快照对比检测到的新增任务）
   newTaskNames: string[];
   setNewTaskNames: (names: string[]) => void;
@@ -493,7 +503,7 @@ export const useAppStore = create<AppState>()(
             taskName: task.name,
             enabled: true,
             optionValues,
-            expanded: false,
+            expanded: true, // 新建配置时自动展开所有任务
           });
         });
       }
@@ -505,11 +515,16 @@ export const useAppStore = create<AppState>()(
         isRunning: false,
       };
 
+      // 收集所有新建任务的 ID 用于入场动画
+      const newTaskIds = defaultTasks.map((t) => t.id);
+
       set((state) => ({
         instances: [...state.instances, newInstance],
         activeInstanceId: id,
         nextInstanceNumber: state.nextInstanceNumber + 1,
         showAddTaskPanel: true, // 新建配置时自动展开添加任务面板
+        animatingTaskIds: [...state.animatingTaskIds, ...newTaskIds],
+        animatingTabIds: [...state.animatingTabIds, id], // 添加到标签页进入动画列表
       }));
 
       return id;
@@ -609,6 +624,7 @@ export const useAppStore = create<AppState>()(
           i.id === instanceId ? { ...i, selectedTasks: [...i.selectedTasks, newTask] } : i,
         ),
         lastAddedTaskId: newTask.id, // 记录最近添加的任务 ID
+        animatingTaskIds: [...state.animatingTaskIds, newTask.id], // 加入动画列表
       }));
     },
 
@@ -904,6 +920,41 @@ export const useAppStore = create<AppState>()(
     // 最近添加的任务 ID
     lastAddedTaskId: null,
     clearLastAddedTaskId: () => set({ lastAddedTaskId: null }),
+
+    // 正在播放入场动画的任务 ID 列表
+    animatingTaskIds: [],
+    removeAnimatingTaskId: (taskId) =>
+      set((state) => ({
+        animatingTaskIds: state.animatingTaskIds.filter((id) => id !== taskId),
+      })),
+
+    // 标签页动画状态
+    animatingTabIds: [],
+    closingTabIds: [],
+    removeAnimatingTabId: (tabId) =>
+      set((state) => ({
+        animatingTabIds: state.animatingTabIds.filter((id) => id !== tabId),
+      })),
+    startTabCloseAnimation: (tabId) => {
+      const state = get();
+      if (state.instances.length <= 1) return; // 最后一个标签不能关闭
+
+      // 添加到关闭动画列表
+      set((s) => ({
+        closingTabIds: [...s.closingTabIds, tabId],
+      }));
+
+      // 动画结束后真正删除
+      setTimeout(() => {
+        const currentState = get();
+        // 从关闭动画列表移除
+        set((s) => ({
+          closingTabIds: s.closingTabIds.filter((id) => id !== tabId),
+        }));
+        // 调用原始的 removeInstance
+        currentState.removeInstance(tabId);
+      }, 120); // 与 CSS 动画时长一致
+    },
 
     // 新增任务名称列表（会持久化到配置文件）
     newTaskNames: [],

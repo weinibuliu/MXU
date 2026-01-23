@@ -68,6 +68,7 @@ function InstanceCard({ instanceId, instanceName, isActive, onSelect }: Instance
     registerTaskIdName,
     registerEntryTaskName,
     screenshotFrameRate,
+    setShowAddTaskPanel,
   } = useAppStore();
 
   const langKey = getInterfaceLangKey(language);
@@ -242,6 +243,7 @@ function InstanceCard({ instanceId, instanceName, isActive, onSelect }: Instance
 
           updateInstance(instanceId, { isRunning: true });
           setInstanceTaskStatus(instanceId, 'Running');
+          setShowAddTaskPanel(false);
 
           // 启动任务
           const taskIds = await maaService.startTasks(
@@ -316,6 +318,7 @@ function InstanceCard({ instanceId, instanceName, isActive, onSelect }: Instance
       setCurrentTaskIndex,
       registerTaskIdName,
       registerEntryTaskName,
+      setShowAddTaskPanel,
     ],
   );
 
@@ -803,13 +806,19 @@ function InstanceCard({ instanceId, instanceName, isActive, onSelect }: Instance
   );
 }
 
-export function DashboardView() {
+interface DashboardViewProps {
+  onClose?: () => void;
+}
+
+export function DashboardView({ onClose }: DashboardViewProps) {
   const { t } = useTranslation();
   const { instances, activeInstanceId, setActiveInstance, toggleDashboardView } = useAppStore();
 
+  const handleClose = onClose ?? toggleDashboardView;
+
   const handleSelectInstance = (instanceId: string) => {
     setActiveInstance(instanceId);
-    toggleDashboardView();
+    handleClose();
   };
 
   return (
@@ -858,7 +867,7 @@ export function DashboardView() {
         <div className="flex items-center gap-4">
           <FrameRateSelector compact />
           <button
-            onClick={toggleDashboardView}
+            onClick={handleClose}
             className="px-3 py-1.5 text-sm bg-bg-hover hover:bg-bg-active text-text-secondary rounded-lg transition-colors"
           >
             {t('dashboard.exit')}

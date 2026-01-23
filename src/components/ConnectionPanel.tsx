@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
-  ChevronUp,
   Smartphone,
   Monitor,
   Apple,
@@ -1109,17 +1108,22 @@ export function ConnectionPanel() {
         </div>
         <div className="flex items-center gap-2">
           <StatusIndicator />
-          {!connectionPanelExpanded ? (
-            <ChevronDown className="w-4 h-4 text-text-muted" />
-          ) : (
-            <ChevronUp className="w-4 h-4 text-text-muted" />
-          )}
+          <ChevronDown
+            className={clsx(
+              'w-4 h-4 text-text-muted transition-transform duration-150 ease-out',
+              connectionPanelExpanded && 'rotate-180',
+            )}
+          />
         </div>
       </button>
 
-      {/* 可折叠内容 */}
-      {connectionPanelExpanded && (
-        <div className="p-3 space-y-3">
+      {/* 可折叠内容 - 使用 grid 动画实现平滑展开/折叠 */}
+      <div
+        className="grid transition-[grid-template-rows] duration-150 ease-out"
+        style={{ gridTemplateRows: connectionPanelExpanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="p-3 space-y-3">
           {/* 控制器选择 - 标题和按钮同一行 */}
           {controllers.length > 1 && (
             <div className="flex items-center justify-between gap-2">
@@ -1424,8 +1428,9 @@ export function ConnectionPanel() {
               <span>{resourceError}</span>
             </div>
           )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

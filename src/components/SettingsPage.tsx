@@ -63,7 +63,11 @@ interface ResolvedContent {
   iconPath: string | undefined;
 }
 
-export function SettingsPage() {
+interface SettingsPageProps {
+  onClose?: () => void;
+}
+
+export function SettingsPage({ onClose }: SettingsPageProps) {
   const { t } = useTranslation();
   const {
     theme,
@@ -586,7 +590,7 @@ export function SettingsPage() {
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 px-4 py-3 bg-bg-secondary border-b border-border">
         <button
-          onClick={() => setCurrentPage('main')}
+          onClick={onClose ?? (() => setCurrentPage('main'))}
           className="p-2 rounded-lg hover:bg-bg-hover transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-text-secondary" />

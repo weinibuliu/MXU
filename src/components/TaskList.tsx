@@ -45,9 +45,10 @@ export function TaskList() {
     if (lastAddedTaskId && scrollContainerRef.current) {
       // 使用 requestAnimationFrame 确保 DOM 已更新
       requestAnimationFrame(() => {
+        // 使用 instant 避免与任务入场动画冲突产生视觉跳动
         scrollContainerRef.current?.scrollTo({
           top: scrollContainerRef.current.scrollHeight,
-          behavior: 'smooth',
+          behavior: 'instant',
         });
       });
       // 清除标记，避免重复触发
