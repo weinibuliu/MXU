@@ -669,7 +669,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
             pipeline_override: generateTaskPipelineOverride(selectedTask, projectInterface),
           });
           // 预注册 entry -> taskName 映射，确保回调时能找到任务名
-          const taskDisplayName = selectedTask.customName || selectedTask.taskName;
+          const taskDisplayName = selectedTask.customName || taskDef.label || selectedTask.taskName;
           registerEntryTaskName(taskDef.entry, taskDisplayName);
         }
 
@@ -717,8 +717,12 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
         taskIds.forEach((maaTaskId, index) => {
           if (enabledTasks[index]) {
             registerMaaTaskMapping(targetId, maaTaskId, enabledTasks[index].id);
-            // 注册 task_id 与任务名的映射（使用自定义名称或任务名）
-            const taskDisplayName = enabledTasks[index].customName || enabledTasks[index].taskName;
+            // 注册 task_id 与任务名的映射（使用自定义名称或 label）
+            const taskDef = projectInterface?.task.find(
+              (t) => t.name === enabledTasks[index].taskName,
+            );
+            const taskDisplayName =
+              enabledTasks[index].customName || taskDef?.label || enabledTasks[index].taskName;
             registerTaskIdName(maaTaskId, taskDisplayName);
           }
         });
@@ -983,7 +987,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
             pipeline_override: generateTaskPipelineOverride(selectedTask, projectInterface),
           });
           // 预注册 entry -> taskName 映射，确保回调时能找到任务名
-          const taskDisplayName = selectedTask.customName || selectedTask.taskName;
+          const taskDisplayName = selectedTask.customName || taskDef.label || selectedTask.taskName;
           registerEntryTaskName(taskDef.entry, taskDisplayName);
         }
 
@@ -1029,8 +1033,12 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
         taskIds.forEach((maaTaskId, index) => {
           if (enabledTasks[index]) {
             registerMaaTaskMapping(instance.id, maaTaskId, enabledTasks[index].id);
-            // 注册 task_id 与任务名的映射（使用自定义名称或任务名）
-            const taskDisplayName = enabledTasks[index].customName || enabledTasks[index].taskName;
+            // 注册 task_id 与任务名的映射（使用自定义名称或 label）
+            const taskDef = projectInterface?.task.find(
+              (t) => t.name === enabledTasks[index].taskName,
+            );
+            const taskDisplayName =
+              enabledTasks[index].customName || taskDef?.label || enabledTasks[index].taskName;
             registerTaskIdName(maaTaskId, taskDisplayName);
           }
         });

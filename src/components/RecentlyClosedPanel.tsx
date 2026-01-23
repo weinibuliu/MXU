@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, History, RotateCcw, Trash2, Gamepad2, Package, ListChecks } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import type { RecentlyClosedInstance } from '@/types/config';
+import type { ProjectInterface } from '@/types/interface';
 import clsx from 'clsx';
 
 interface RecentlyClosedPanelProps {
@@ -38,20 +39,48 @@ function formatFullTime(timestamp: number): string {
   return date.toLocaleString();
 }
 
+// 获取控制器显示名称（优先 label，回退到 name）
+function getControllerLabel(
+  controllerName: string | undefined,
+  projectInterface: ProjectInterface | null,
+): string {
+  if (!controllerName) return '';
+  const controller = projectInterface?.controller.find((c) => c.name === controllerName);
+  return controller?.label || controllerName;
+}
+
+// 获取资源显示名称（优先 label，回退到 name）
+function getResourceLabel(
+  resourceName: string | undefined,
+  projectInterface: ProjectInterface | null,
+): string {
+  if (!resourceName) return '';
+  const resource = projectInterface?.resource.find((r) => r.name === resourceName);
+  return resource?.label || resourceName;
+}
+
 // 格式化任务摘要
-function formatTasksSummary(item: RecentlyClosedInstance, t: (key: string) => string): string {
+function formatTasksSummary(
+  item: RecentlyClosedInstance,
+  t: (key: string) => string,
+  projectInterface: ProjectInterface | null,
+): string {
   const taskCount = item.tasks.length;
   if (taskCount === 0) {
     return t('recentlyClosed.noTasks');
   }
 
-  const firstTaskName = item.tasks[0].customName || item.tasks[0].taskName;
+  // 优先使用 customName，其次通过 taskName 查找对应的 label，最后回退到 taskName
+  const firstTask = item.tasks[0];
+  const taskDef = projectInterface?.task.find((task) => task.name === firstTask.taskName);
+  const firstTaskLabel = firstTask.customName || taskDef?.label || firstTask.taskName;
+
   if (taskCount === 1) {
-    return firstTaskName;
+    return firstTaskLabel;
   }
 
   return t('recentlyClosed.tasksCount')
-    .replace('{{first}}', firstTaskName)
+    .replace('{{first}}', firstTaskLabel)
     .replace('{{count}}', String(taskCount));
 }
 
@@ -60,8 +89,13 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
 
-  const { recentlyClosed, reopenRecentlyClosed, removeFromRecentlyClosed, clearRecentlyClosed } =
-    useAppStore();
+  const {
+    recentlyClosed,
+    reopenRecentlyClosed,
+    removeFromRecentlyClosed,
+    clearRecentlyClosed,
+    projectInterface,
+  } = useAppStore();
 
   // 计算面板位置
   useEffect(() => {
@@ -208,7 +242,9 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
                       title={t('controller.title')}
                     >
                       <Gamepad2 className="w-3 h-3" />
-                      <span className="max-w-[80px] truncate">{item.controllerName}</span>
+                      <span className="max-w-[80px] truncate">
+                        {getControllerLabel(item.controllerName, projectInterface)}
+                      </span>
                     </span>
                   )}
                   {item.controllerName && item.resourceName && (
@@ -217,7 +253,9 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
                   {item.resourceName && (
                     <span className="flex items-center gap-1 shrink-0" title={t('resource.title')}>
                       <Package className="w-3 h-3" />
-                      <span className="max-w-[80px] truncate">{item.resourceName}</span>
+                      <span className="max-w-[80px] truncate">
+                        {getResourceLabel(item.resourceName, projectInterface)}
+                      </span>
                     </span>
                   )}
                   {(item.controllerName || item.resourceName) && item.tasks.length > 0 && (
@@ -226,10 +264,10 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
                   {item.tasks.length > 0 && (
                     <span
                       className="flex items-center gap-1 truncate"
-                      title={formatTasksSummary(item, t)}
+                      title={formatTasksSummary(item, t, projectInterface)}
                     >
                       <ListChecks className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{formatTasksSummary(item, t)}</span>
+                      <span className="truncate">{formatTasksSummary(item, t, projectInterface)}</span>
                     </span>
                   )}
                 </div>
