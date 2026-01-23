@@ -164,6 +164,7 @@ export default {
     loadResource: 'リソースを読み込む',
     switchFailed: 'リソースの切り替えに失敗しました',
     cannotSwitchWhileRunning: 'タスク実行中はリソースを切り替えられません',
+    incompatibleController: '現在のコントローラーに対応していません',
   },
 
   // MaaFramework

@@ -12,6 +12,7 @@ interface ResourceSelectorProps {
   instanceId: string;
   resources: ResourceItem[];
   selectedResourceName?: string;
+  selectedControllerName?: string;
   onResourceChange?: (resourceName: string) => void;
   onLoadStatusChange?: (loaded: boolean) => void;
   isRunning?: boolean;
@@ -21,12 +22,29 @@ export function ResourceSelector({
   instanceId,
   resources,
   selectedResourceName,
+  selectedControllerName,
   onResourceChange,
   onLoadStatusChange,
   isRunning = false,
 }: ResourceSelectorProps) {
   const { t } = useTranslation();
   const { basePath, language, interfaceTranslations, registerResIdName } = useAppStore();
+
+  // 检查资源是否与当前控制器兼容
+  const getResourceCompatibility = useCallback(
+    (resource: ResourceItem) => {
+      const isControllerIncompatible =
+        resource.controller &&
+        resource.controller.length > 0 &&
+        (!selectedControllerName || !resource.controller.includes(selectedControllerName));
+
+      return {
+        isIncompatible: isControllerIncompatible,
+        reason: isControllerIncompatible ? t('resource.incompatibleController') : '',
+      };
+    },
+    [selectedControllerName, t],
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -228,36 +246,57 @@ export function ResourceSelector({
 
       {/* 资源选择下拉框 */}
       <div className="relative">
-        <button
-          ref={dropdownRef}
-          onClick={() => {
-            if (isDisabled) return;
-            if (!showDropdown) {
-              setDropdownPos(calcDropdownPosition());
-            }
-            setShowDropdown(!showDropdown);
-          }}
-          disabled={isDisabled}
-          className={clsx(
-            'w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors',
-            'bg-bg-tertiary border-border',
-            isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-accent cursor-pointer',
-          )}
-        >
-          <span
-            className={clsx('truncate', selectedResource ? 'text-text-primary' : 'text-text-muted')}
-          >
-            {selectedResource
-              ? getResourceDisplayName(selectedResource)
-              : t('resource.selectResource')}
-          </span>
-          <ChevronDown
-            className={clsx(
-              'w-4 h-4 text-text-muted transition-transform',
-              showDropdown && 'rotate-180',
-            )}
-          />
-        </button>
+        {(() => {
+          const selectedResourceCompatibility = selectedResource
+            ? getResourceCompatibility(selectedResource)
+            : { isIncompatible: false, reason: '' };
+          const isSelectedIncompatible = selectedResourceCompatibility.isIncompatible;
+
+          return (
+            <button
+              ref={dropdownRef}
+              onClick={() => {
+                if (isDisabled) return;
+                if (!showDropdown) {
+                  setDropdownPos(calcDropdownPosition());
+                }
+                setShowDropdown(!showDropdown);
+              }}
+              disabled={isDisabled}
+              className={clsx(
+                'w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors',
+                'bg-bg-tertiary',
+                isSelectedIncompatible ? 'border-warning/50' : 'border-border',
+                isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-accent cursor-pointer',
+              )}
+              title={isSelectedIncompatible ? selectedResourceCompatibility.reason : undefined}
+            >
+              <span
+                className={clsx(
+                  'truncate flex items-center gap-1.5',
+                  selectedResource
+                    ? isSelectedIncompatible
+                      ? 'text-text-muted'
+                      : 'text-text-primary'
+                    : 'text-text-muted',
+                )}
+              >
+                {isSelectedIncompatible && (
+                  <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+                )}
+                {selectedResource
+                  ? getResourceDisplayName(selectedResource)
+                  : t('resource.selectResource')}
+              </span>
+              <ChevronDown
+                className={clsx(
+                  'w-4 h-4 text-text-muted transition-transform',
+                  showDropdown && 'rotate-180',
+                )}
+              />
+            </button>
+          );
+        })()}
 
         {/* 下拉菜单 - 使用 fixed 定位避免被父容器裁剪 */}
         {showDropdown && dropdownPos && (
@@ -270,31 +309,53 @@ export function ResourceSelector({
               width: dropdownPos.width,
             }}
           >
-            {resources.map((resource) => (
-              <button
-                key={resource.name}
-                onClick={() => handleResourceSelect(resource)}
-                className={clsx(
-                  'w-full flex items-center justify-between px-3 py-2 text-left transition-colors',
-                  'hover:bg-bg-hover',
-                  selectedResource?.name === resource.name && 'bg-accent/10',
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm text-text-primary truncate">
-                    {getResourceDisplayName(resource)}
-                  </div>
-                  {resource.description && (
-                    <div className="text-xs text-text-muted truncate">
-                      {resolveI18nText(resource.description, translations)}
-                    </div>
+            {resources.map((resource) => {
+              const { isIncompatible, reason } = getResourceCompatibility(resource);
+              const isSelected = selectedResource?.name === resource.name;
+
+              return (
+                <button
+                  key={resource.name}
+                  onClick={() => !isIncompatible && handleResourceSelect(resource)}
+                  disabled={isIncompatible}
+                  className={clsx(
+                    'w-full flex items-center justify-between px-3 py-2 text-left transition-colors',
+                    isIncompatible
+                      ? 'opacity-60 cursor-not-allowed'
+                      : 'hover:bg-bg-hover cursor-pointer',
+                    isSelected && !isIncompatible && 'bg-accent/10',
                   )}
-                </div>
-                {selectedResource?.name === resource.name && (
-                  <Check className="w-4 h-4 text-accent flex-shrink-0 ml-2" />
-                )}
-              </button>
-            ))}
+                  title={isIncompatible ? reason : undefined}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={clsx(
+                        'text-sm truncate flex items-center gap-1.5',
+                        isIncompatible ? 'text-text-muted' : 'text-text-primary',
+                      )}
+                    >
+                      {isIncompatible && (
+                        <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+                      )}
+                      <span className="truncate">{getResourceDisplayName(resource)}</span>
+                    </div>
+                    {/* 描述或不兼容提示 */}
+                    {isIncompatible ? (
+                      <div className="text-xs text-warning truncate">{reason}</div>
+                    ) : (
+                      resource.description && (
+                        <div className="text-xs text-text-muted truncate">
+                          {resolveI18nText(resource.description, translations)}
+                        </div>
+                      )
+                    )}
+                  </div>
+                  {isSelected && !isIncompatible && (
+                    <Check className="w-4 h-4 text-accent flex-shrink-0 ml-2" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

@@ -160,6 +160,7 @@ export default {
     loadResource: '리소스 로드',
     switchFailed: '리소스 전환에 실패했습니다',
     cannotSwitchWhileRunning: '작업 실행 중에는 리소스를 전환할 수 없습니다',
+    incompatibleController: '현재 컨트롤러에서 지원되지 않음',
   },
 
   // MaaFramework

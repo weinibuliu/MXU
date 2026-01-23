@@ -163,6 +163,7 @@ export default {
     loadResource: 'Load Resource',
     switchFailed: 'Failed to switch resource',
     cannotSwitchWhileRunning: 'Cannot switch resource while tasks are running',
+    incompatibleController: 'Not supported by current controller',
   },
 
   // MaaFramework

@@ -291,19 +291,32 @@ export function ConnectionPanel() {
     controllers.find((c) => c.name === currentControllerName) || controllers[0];
   const controllerType = currentController?.type;
 
-  // 获取资源列表（根据当前控制器过滤）
+  // 获取资源列表
   const allResources = projectInterface?.resource || [];
-  const resources = useMemo(() => {
-    return allResources.filter((r) => {
-      // 如果资源指定了 controller 字段，只在选中的控制器匹配时显示
-      if (r.controller && r.controller.length > 0) {
-        return r.controller.includes(currentControllerName);
-      }
-      return true;
-    });
-  }, [allResources, currentControllerName]);
-  const currentResourceName = selectedResource[instanceId] || resources[0]?.name;
-  const currentResource = resources.find((r) => r.name === currentResourceName) || resources[0];
+
+  // 检查资源是否与当前控制器兼容
+  const getResourceCompatibility = useCallback(
+    (resource: ResourceItem) => {
+      const isControllerIncompatible =
+        resource.controller &&
+        resource.controller.length > 0 &&
+        (!currentControllerName || !resource.controller.includes(currentControllerName));
+
+      return {
+        isIncompatible: isControllerIncompatible,
+        reason: isControllerIncompatible ? t('resource.incompatibleController') : '',
+      };
+    },
+    [currentControllerName, t],
+  );
+
+  // 获取兼容的资源列表（用于默认选择）
+  const compatibleResources = useMemo(() => {
+    return allResources.filter((r) => !getResourceCompatibility(r).isIncompatible);
+  }, [allResources, getResourceCompatibility]);
+
+  const currentResourceName = selectedResource[instanceId] || compatibleResources[0]?.name;
+  const currentResource = allResources.find((r) => r.name === currentResourceName) || compatibleResources[0];
 
   // 当设备和资源都准备好时自动折叠
   useEffect(() => {
@@ -1367,49 +1380,67 @@ export function ConnectionPanel() {
           {/* 资源选择 - 选中即自动加载 */}
           <div className="relative">
             {/* 资源下拉框 */}
-            <button
-              ref={resourceDropdownRef}
-              onClick={() => {
-                if (isLoadingResource || activeInstance?.isRunning) return;
-                if (!showResourceDropdown) {
-                  setResourceDropdownPos(calcDropdownPositionUp(resourceDropdownRef));
-                }
-                setShowResourceDropdown(!showResourceDropdown);
-              }}
-              disabled={isLoadingResource || activeInstance?.isRunning || false}
-              className={clsx(
-                'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border transition-colors text-sm',
-                'bg-bg-tertiary border-border',
-                isLoadingResource || activeInstance?.isRunning
-                  ? 'opacity-60 cursor-not-allowed'
-                  : 'hover:border-accent cursor-pointer',
-              )}
-            >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span
+            {(() => {
+              const selectedResourceCompatibility = currentResource
+                ? getResourceCompatibility(currentResource)
+                : { isIncompatible: false, reason: '' };
+              const isSelectedIncompatible = selectedResourceCompatibility.isIncompatible;
+
+              return (
+                <button
+                  ref={resourceDropdownRef}
+                  onClick={() => {
+                    if (isLoadingResource || activeInstance?.isRunning) return;
+                    if (!showResourceDropdown) {
+                      setResourceDropdownPos(calcDropdownPositionUp(resourceDropdownRef));
+                    }
+                    setShowResourceDropdown(!showResourceDropdown);
+                  }}
+                  disabled={isLoadingResource || activeInstance?.isRunning || false}
                   className={clsx(
-                    'truncate',
-                    currentResource ? 'text-text-primary' : 'text-text-muted',
+                    'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border transition-colors text-sm',
+                    'bg-bg-tertiary',
+                    isSelectedIncompatible ? 'border-warning/50' : 'border-border',
+                    isLoadingResource || activeInstance?.isRunning
+                      ? 'opacity-60 cursor-not-allowed'
+                      : 'hover:border-accent cursor-pointer',
                   )}
+                  title={isSelectedIncompatible ? selectedResourceCompatibility.reason : undefined}
                 >
-                  {currentResource
-                    ? getResourceDisplayName(currentResource)
-                    : t('resource.selectResource')}
-                </span>
-                {isLoadingResource && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-accent flex-shrink-0" />
-                )}
-                {!isLoadingResource && isResourceLoaded && (
-                  <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
-                )}
-              </div>
-              <ChevronDown
-                className={clsx(
-                  'w-4 h-4 text-text-muted transition-transform flex-shrink-0',
-                  showResourceDropdown && 'rotate-180',
-                )}
-              />
-            </button>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {isSelectedIncompatible && (
+                      <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+                    )}
+                    <span
+                      className={clsx(
+                        'truncate',
+                        currentResource
+                          ? isSelectedIncompatible
+                            ? 'text-text-muted'
+                            : 'text-text-primary'
+                          : 'text-text-muted',
+                      )}
+                    >
+                      {currentResource
+                        ? getResourceDisplayName(currentResource)
+                        : t('resource.selectResource')}
+                    </span>
+                    {isLoadingResource && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-accent flex-shrink-0" />
+                    )}
+                    {!isLoadingResource && isResourceLoaded && !isSelectedIncompatible && (
+                      <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={clsx(
+                      'w-4 h-4 text-text-muted transition-transform flex-shrink-0',
+                      showResourceDropdown && 'rotate-180',
+                    )}
+                  />
+                </button>
+              );
+            })()}
 
             {/* 资源下拉菜单 - 使用 fixed 定位向上展开 */}
             {showResourceDropdown && resourceDropdownPos && (
@@ -1422,31 +1453,53 @@ export function ConnectionPanel() {
                   width: resourceDropdownPos.width,
                 }}
               >
-                {resources.map((resource) => (
-                  <button
-                    key={resource.name}
-                    onClick={() => handleResourceSelect(resource)}
-                    className={clsx(
-                      'w-full flex items-center justify-between px-2.5 py-1.5 text-left transition-colors',
-                      'hover:bg-bg-hover',
-                      currentResourceName === resource.name && 'bg-accent/10',
-                    )}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm text-text-primary truncate">
-                        {getResourceDisplayName(resource)}
-                      </div>
-                      {resource.description && (
-                        <div className="text-xs text-text-muted truncate">
-                          {resolveI18nText(resource.description, translations)}
-                        </div>
+                {allResources.map((resource) => {
+                  const { isIncompatible, reason } = getResourceCompatibility(resource);
+                  const isSelected = currentResourceName === resource.name;
+
+                  return (
+                    <button
+                      key={resource.name}
+                      onClick={() => !isIncompatible && handleResourceSelect(resource)}
+                      disabled={isIncompatible}
+                      className={clsx(
+                        'w-full flex items-center justify-between px-2.5 py-1.5 text-left transition-colors',
+                        isIncompatible
+                          ? 'opacity-60 cursor-not-allowed'
+                          : 'hover:bg-bg-hover cursor-pointer',
+                        isSelected && !isIncompatible && 'bg-accent/10',
                       )}
-                    </div>
-                    {currentResourceName === resource.name && (
-                      <Check className="w-4 h-4 text-accent flex-shrink-0 ml-2" />
-                    )}
-                  </button>
-                ))}
+                      title={isIncompatible ? reason : undefined}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className={clsx(
+                            'text-sm truncate flex items-center gap-1.5',
+                            isIncompatible ? 'text-text-muted' : 'text-text-primary',
+                          )}
+                        >
+                          {isIncompatible && (
+                            <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+                          )}
+                          <span className="truncate">{getResourceDisplayName(resource)}</span>
+                        </div>
+                        {/* 描述或不兼容提示 */}
+                        {isIncompatible ? (
+                          <div className="text-xs text-warning truncate">{reason}</div>
+                        ) : (
+                          resource.description && (
+                            <div className="text-xs text-text-muted truncate">
+                              {resolveI18nText(resource.description, translations)}
+                            </div>
+                          )
+                        )}
+                      </div>
+                      {isSelected && !isIncompatible && (
+                        <Check className="w-4 h-4 text-accent flex-shrink-0 ml-2" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
