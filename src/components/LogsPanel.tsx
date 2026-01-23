@@ -161,7 +161,7 @@ export function LogsPanel() {
         className="flex items-center justify-between px-3 py-2 border-b border-border hover:bg-bg-hover transition-colors cursor-pointer"
       >
         <span className="text-sm font-medium text-text-primary">{t('logs.title')}</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {/* 打开日志目录 */}
           <button
             onClick={(e) => {
@@ -170,14 +170,14 @@ export function LogsPanel() {
             }}
             disabled={!isTauri() || !basePath}
             className={clsx(
-              'p-1.5 rounded-md transition-colors',
+              'p-1 rounded-md transition-colors',
               !isTauri() || !basePath
                 ? 'text-text-muted cursor-not-allowed'
-                : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary',
+                : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
             )}
             title={t('settings.openLogDir')}
           >
-            <FolderOpen className="w-4 h-4" />
+            <FolderOpen className="w-3.5 h-3.5" />
           </button>
           {/* 清空 */}
           <button
@@ -187,20 +187,20 @@ export function LogsPanel() {
             }}
             disabled={logs.length === 0}
             className={clsx(
-              'p-1.5 rounded-md transition-colors',
+              'p-1 rounded-md transition-colors',
               logs.length === 0
                 ? 'text-text-muted cursor-not-allowed'
-                : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary',
+                : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
             )}
             title={t('logs.clear')}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
           {/* 展开/折叠上方面板 */}
           <span
             className={clsx(
-              'p-1.5 rounded-md transition-colors',
-              !sidePanelExpanded ? 'text-accent bg-accent-light' : 'text-text-secondary',
+              'p-0.5 rounded transition-colors',
+              !sidePanelExpanded ? 'text-accent bg-accent-light' : 'text-text-muted',
             )}
           >
             <ChevronDown
