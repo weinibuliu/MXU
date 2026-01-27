@@ -550,4 +550,14 @@ export default {
     hint: 'ヒント：「D:\\MaaXXX」のような専用フォルダに解凍することをお勧めします。管理しやすくするため、デスクトップやダウンロードフォルダは避けてください。',
     exit: '終了',
   },
+  // プロキシ設定
+  proxy: {
+    title: 'ネットワークプロキシ',
+    url: 'プロキシ URL',
+    urlPlaceholder: '例：http://127.0.0.1:7890',
+    urlHint: 'HTTP/SOCKS5 をサポート、空欄でプロキシを無効化',
+    urlHintDisabled: 'Mirror醤 CDK が入力されているため、プロキシは無効です',
+    invalid: 'プロキシ URL の形式が正しくありません',
+    examples: '形式の例',
+  },
 };

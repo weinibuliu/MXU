@@ -548,4 +548,14 @@ export default {
     hint: 'Tip: We recommend extracting to a dedicated folder like "D:\\MaaXXX". Avoid Desktop or Downloads for easier management.',
     exit: 'Exit',
   },
+  // Proxy Settings
+  proxy: {
+    title: 'Network Proxy',
+    url: 'Proxy URL',
+    urlPlaceholder: 'e.g., http://127.0.0.1:7890',
+    urlHint: 'Supports HTTP/SOCKS5, leave empty to disable proxy',
+    urlHintDisabled: 'MirrorChyan CDK filled, proxy is disabled',
+    invalid: 'Invalid proxy URL format',
+    examples: 'Example Formats',
+  },
 };

@@ -541,4 +541,14 @@ export default {
     hint: '팁: "D:\\MaaXXX"와 같은 전용 폴더에 압축을 푸는 것이 좋습니다. 관리하기 쉽도록 바탕화면이나 다운로드 폴더는 피하세요.',
     exit: '종료',
   },
+  // 프록시 설정
+  proxy: {
+    title: '네트워크 프록시',
+    url: '프록시 주소',
+    urlPlaceholder: '예: http://127.0.0.1:7890',
+    urlHint: 'HTTP/SOCKS5 지원, 비워두면 프록시를 사용하지 않음',
+    urlHintDisabled: 'Mirror짱 CDK가 입력되어 프록시 기능이 비활성화되었습니다',
+    invalid: '프록시 주소 형식이 올바르지 않습니다',
+    examples: '예시 형식',
+  },
 };

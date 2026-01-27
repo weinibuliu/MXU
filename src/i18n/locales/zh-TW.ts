@@ -542,4 +542,14 @@ export default {
     hint: '小提示：建議解壓到一個專門的資料夾，比如「D:\\MaaXXX」，别放桌面或者下載資料夾，那樣更方便管理。',
     exit: '退出程式',
   },
+  // 代理設定
+  proxy: {
+    title: '網路代理',
+    url: '代理位址',
+    urlPlaceholder: '例如：http://127.0.0.1:7890',
+    urlHint: '支援 HTTP/SOCKS5，留空則不使用代理',
+    urlHintDisabled: '已填寫 Mirror酱 CDK，代理功能已停用',
+    invalid: '代理位址格式不正確',
+    examples: '示例格式',
+  },
 };
