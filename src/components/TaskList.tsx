@@ -1,5 +1,7 @@
 import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 import {
   DndContext,
   closestCenter,
@@ -51,6 +53,7 @@ export function TaskList() {
   const [importPreviewJson, setImportPreviewJson] = useState<string>('');
   const [importSelected, setImportSelected] = useState<Record<string, boolean>>({});
   const [importMode, setImportMode] = useState<'overwrite' | 'merge'>('overwrite');
+  const isTauri = () => typeof window !== 'undefined' && '__TAURI__' in window;
 
   const exportPayload = useMemo(() => {
     if (!instance) return null;
@@ -116,8 +119,23 @@ export function TaskList() {
     return pendingImportTasks.filter((t) => importSelected[t.id] !== false).length;
   }, [pendingImportTasks, importSelected]);
 
-  const downloadJson = (filename: string, data: unknown) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const downloadJson = async (filename: string, data: unknown) => {
+    const content = JSON.stringify(data, null, 2);
+    if (isTauri()) {
+      try {
+        const filePath = await save({
+          defaultPath: filename,
+          filters: [{ name: 'JSON', extensions: ['json'] }],
+        });
+        if (!filePath) return;
+        await writeTextFile(filePath, content);
+      } catch {
+        // ignore (could add toast later)
+      }
+      return;
+    }
+
+    const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -368,7 +386,7 @@ export function TaskList() {
         confirmText={t('taskList.exportConfirmAction')}
         confirmDisabled={exportSelectedCount === 0}
         onCancel={() => setExportPreviewOpen(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!instance || !exportPayload) return;
           const safeName = instance.name.replace(/[\\/:*?"<>|]/g, '_');
           const filtered = {
@@ -377,7 +395,7 @@ export function TaskList() {
               .filter((t) => exportSelected[String(t.id)] !== false)
               .map(({ id: _id, ...rest }) => rest),
           };
-          downloadJson(`mxu-tasks-${safeName}.json`, filtered);
+          await downloadJson(`mxu-tasks-${safeName}.json`, filtered);
           setExportPreviewOpen(false);
         }}
       >
