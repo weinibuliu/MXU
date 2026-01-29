@@ -1114,7 +1114,10 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
       const combo = detail?.combo || '';
       addLog(instance.id, {
         type: 'info',
-        message: t('logs.messages.hotkeyDetected', { combo, action: t('logs.messages.hotkeyActionStart') }),
+        message: t('logs.messages.hotkeyDetected', {
+          combo,
+          action: t('logs.messages.hotkeyActionStart'),
+        }),
       });
 
       // 始终复用现有的开始/停止逻辑，由 handleStartStop 内部判断是否可运行
@@ -1124,7 +1127,9 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
       const success = !before && !!after;
       addLog(instance.id, {
         type: success ? 'success' : 'error',
-        message: success ? t('logs.messages.hotkeyStartSuccess') : t('logs.messages.hotkeyStartFailed'),
+        message: success
+          ? t('logs.messages.hotkeyStartSuccess')
+          : t('logs.messages.hotkeyStartFailed'),
       });
     };
 
@@ -1137,7 +1142,10 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
       const combo = detail?.combo || '';
       addLog(instance.id, {
         type: 'info',
-        message: t('logs.messages.hotkeyDetected', { combo, action: t('logs.messages.hotkeyActionStop') }),
+        message: t('logs.messages.hotkeyDetected', {
+          combo,
+          action: t('logs.messages.hotkeyActionStop'),
+        }),
       });
 
       const before = useAppStore.getState().instances.find((i) => i.id === instance.id)?.isRunning;
@@ -1146,7 +1154,9 @@ export function Toolbar({ showAddPanel, onToggleAddPanel }: ToolbarProps) {
       const success = !!before && !after;
       addLog(instance.id, {
         type: success ? 'success' : 'error',
-        message: success ? t('logs.messages.hotkeyStopSuccess') : t('logs.messages.hotkeyStopFailed'),
+        message: success
+          ? t('logs.messages.hotkeyStopSuccess')
+          : t('logs.messages.hotkeyStopFailed'),
       });
     };
 

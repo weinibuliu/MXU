@@ -779,7 +779,7 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
             onClick={() => {
               if (!confirmBeforeDelete) {
                 removeTaskFromInstance(instanceId, task.id);
-                return; 
+                return;
               }
               setShowDeleteConfirm(true);
             }}

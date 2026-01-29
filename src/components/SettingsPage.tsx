@@ -223,7 +223,7 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
             onClick={(e) => {
               e.stopPropagation();
               if (confirmBeforeDelete) {
-              setPendingDeleteAccentId(customAccent.id);
+                setPendingDeleteAccentId(customAccent.id);
               } else {
                 performDeleteCustomAccent(customAccent.id);
               }
@@ -793,7 +793,9 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
     loadContent();
   }, [projectInterface, langKey, basePath, translations]);
 
-  const handleLanguageChange = (lang: 'system' | 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP' | 'ko-KR') => {
+  const handleLanguageChange = (
+    lang: 'system' | 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP' | 'ko-KR',
+  ) => {
     setLanguage(lang);
   };
 

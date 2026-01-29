@@ -77,7 +77,8 @@ export default {
     confirmBeforeDelete: 'Confirm delete actions',
     confirmBeforeDeleteHint: 'Show confirmation before delete/clear list/import overwrite, etc.',
     maxLogsPerInstance: 'Max logs per instance',
-    maxLogsPerInstanceHint: 'Oldest logs will be discarded when exceeding the limit (recommended 500–2000)',
+    maxLogsPerInstanceHint:
+      'Oldest logs will be discarded when exceeding the limit (recommended 500–2000)',
   },
 
   // Task list
@@ -91,8 +92,10 @@ export default {
     noTasks: 'No tasks',
     dragToReorder: 'Drag to reorder',
     importConfirmTitle: 'Import task list',
-    importConfirmMessageOverwrite: 'Import will overwrite the current instance task list. Continue?',
-    importConfirmMessageMerge: 'Import will be merged into the current instance task list. Continue?',
+    importConfirmMessageOverwrite:
+      'Import will overwrite the current instance task list. Continue?',
+    importConfirmMessageMerge:
+      'Import will be merged into the current instance task list. Continue?',
     importConfirmAction: 'Import',
     importPreviewCount: 'Import content: {{count}} tasks',
     importModeLabel: 'Import mode',

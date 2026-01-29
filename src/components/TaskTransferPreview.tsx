@@ -80,4 +80,3 @@ export function TaskTransferPreview({
     </div>
   );
 }
-

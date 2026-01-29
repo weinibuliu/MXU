@@ -208,7 +208,10 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button onClick={onClose} className="p-1 rounded-md hover:bg-bg-hover transition-colors">
+            <button
+              onClick={onClose}
+              className="p-1 rounded-md hover:bg-bg-hover transition-colors"
+            >
               <X className="w-4 h-4 text-text-muted" />
             </button>
           </div>
@@ -232,99 +235,102 @@ export function RecentlyClosedPanel({ onClose, anchorRef }: RecentlyClosedPanelP
                     'hover:bg-bg-hover transition-colors',
                   )}
                 >
-                {/* 第一行：名称 + 操作按钮 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className="flex-1 text-sm font-medium text-text-primary truncate"
-                    title={item.name}
-                  >
-                    {item.name}
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReopen(item.id);
-                      }}
-                      className="p-1 rounded-md hover:bg-accent/10 text-accent transition-colors"
-                      title={t('recentlyClosed.reopen')}
+                  {/* 第一行：名称 + 操作按钮 */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex-1 text-sm font-medium text-text-primary truncate"
+                      title={item.name}
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => handleRemove(e, item.id)}
-                      className="p-1 rounded-md hover:bg-error/10 text-text-muted hover:text-error transition-colors"
-                      title={t('recentlyClosed.remove')}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                      {item.name}
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReopen(item.id);
+                        }}
+                        className="p-1 rounded-md hover:bg-accent/10 text-accent transition-colors"
+                        title={t('recentlyClosed.reopen')}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => handleRemove(e, item.id)}
+                        className="p-1 rounded-md hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                        title={t('recentlyClosed.remove')}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* 第二行：控制器 · 资源 · 任务 */}
-                <div className="flex items-center gap-2 mt-1 text-xs text-text-muted">
-                  {item.controllerName && (
-                    <span
-                      className="flex items-center gap-1 shrink-0"
-                      title={t('controller.title')}
-                    >
-                      <Gamepad2 className="w-3 h-3" />
-                      <span className="max-w-[80px] truncate">
-                        {getControllerLabel(
-                          item.controllerName,
+                  {/* 第二行：控制器 · 资源 · 任务 */}
+                  <div className="flex items-center gap-2 mt-1 text-xs text-text-muted">
+                    {item.controllerName && (
+                      <span
+                        className="flex items-center gap-1 shrink-0"
+                        title={t('controller.title')}
+                      >
+                        <Gamepad2 className="w-3 h-3" />
+                        <span className="max-w-[80px] truncate">
+                          {getControllerLabel(
+                            item.controllerName,
+                            projectInterface,
+                            langKey,
+                            resolveI18nText,
+                          )}
+                        </span>
+                      </span>
+                    )}
+                    {item.controllerName && item.resourceName && (
+                      <span className="text-text-muted/50">·</span>
+                    )}
+                    {item.resourceName && (
+                      <span
+                        className="flex items-center gap-1 shrink-0"
+                        title={t('resource.title')}
+                      >
+                        <Package className="w-3 h-3" />
+                        <span className="max-w-[80px] truncate">
+                          {getResourceLabel(
+                            item.resourceName,
+                            projectInterface,
+                            langKey,
+                            resolveI18nText,
+                          )}
+                        </span>
+                      </span>
+                    )}
+                    {(item.controllerName || item.resourceName) && item.tasks.length > 0 && (
+                      <span className="text-text-muted/50">·</span>
+                    )}
+                    {item.tasks.length > 0 && (
+                      <span
+                        className="flex items-center gap-1 truncate"
+                        title={formatTasksSummary(
+                          item,
+                          t,
                           projectInterface,
                           langKey,
                           resolveI18nText,
                         )}
+                      >
+                        <ListChecks className="w-3 h-3 shrink-0" />
+                        <span className="truncate">
+                          {formatTasksSummary(item, t, projectInterface, langKey, resolveI18nText)}
+                        </span>
                       </span>
-                    </span>
-                  )}
-                  {item.controllerName && item.resourceName && (
-                    <span className="text-text-muted/50">·</span>
-                  )}
-                  {item.resourceName && (
-                    <span className="flex items-center gap-1 shrink-0" title={t('resource.title')}>
-                      <Package className="w-3 h-3" />
-                      <span className="max-w-[80px] truncate">
-                        {getResourceLabel(
-                          item.resourceName,
-                          projectInterface,
-                          langKey,
-                          resolveI18nText,
-                        )}
-                      </span>
-                    </span>
-                  )}
-                  {(item.controllerName || item.resourceName) && item.tasks.length > 0 && (
-                    <span className="text-text-muted/50">·</span>
-                  )}
-                  {item.tasks.length > 0 && (
-                    <span
-                      className="flex items-center gap-1 truncate"
-                      title={formatTasksSummary(
-                        item,
-                        t,
-                        projectInterface,
-                        langKey,
-                        resolveI18nText,
-                      )}
-                    >
-                      <ListChecks className="w-3 h-3 shrink-0" />
-                      <span className="truncate">
-                        {formatTasksSummary(item, t, projectInterface, langKey, resolveI18nText)}
-                      </span>
-                    </span>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* 第三行：时间 */}
-                <div className="text-xs text-text-muted/70 mt-1">
-                  <span>{formatRelativeTime(item.closedAt, t)}</span>
-                  <span className="mx-1">·</span>
-                  <span>{formatFullTime(item.closedAt)}</span>
+                  {/* 第三行：时间 */}
+                  <div className="text-xs text-text-muted/70 mt-1">
+                    <span>{formatRelativeTime(item.closedAt, t)}</span>
+                    <span className="mx-1">·</span>
+                    <span>{formatFullTime(item.closedAt)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
           )}
         </div>

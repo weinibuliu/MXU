@@ -423,7 +423,9 @@ export function TaskList() {
             }))}
             selected={exportSelected}
             onToggle={(id, checked) => setExportSelected((prev) => ({ ...prev, [id]: checked }))}
-            emptySelectionWarning={exportSelectedCount === 0 ? t('taskList.mustSelectAtLeastOne') : undefined}
+            emptySelectionWarning={
+              exportSelectedCount === 0 ? t('taskList.mustSelectAtLeastOne') : undefined
+            }
             previewJson={exportJson}
           />
         )}
@@ -527,7 +529,9 @@ export function TaskList() {
               }))}
               selected={importSelected}
               onToggle={(id, checked) => setImportSelected((prev) => ({ ...prev, [id]: checked }))}
-              emptySelectionWarning={importSelectedCount === 0 ? t('taskList.mustSelectAtLeastOne') : undefined}
+              emptySelectionWarning={
+                importSelectedCount === 0 ? t('taskList.mustSelectAtLeastOne') : undefined
+              }
               previewJson={importPreviewJson}
             />
           </div>

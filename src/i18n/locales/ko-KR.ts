@@ -75,7 +75,8 @@ export default {
       '메인 화면에서만 동작하며, 현재 인스턴스의 작업 시작 / 중지에 사용됩니다. Ctrl+F10, Ctrl+Shift+F11 과 같은 조합키도 지원합니다. F5 / F12 단독 키는 계속해서 시스템 / 브라우저용으로 예약됩니다.',
     hotkeysConflict: '시작과 중지 단축키는 서로 다른 키여야 합니다. 다른 키를 선택해 주세요.',
     confirmBeforeDelete: '삭제 작업 확인',
-    confirmBeforeDeleteHint: '삭제/목록 비우기/가져오기 덮어쓰기 등 전에 확인 대화 상자를 표시합니다',
+    confirmBeforeDeleteHint:
+      '삭제/목록 비우기/가져오기 덮어쓰기 등 전에 확인 대화 상자를 표시합니다',
     maxLogsPerInstance: '인스턴스당 로그 최대 개수',
     maxLogsPerInstanceHint: '한도를 초과하면 가장 오래된 로그가 자동으로 삭제됩니다(권장 500~2000)',
   },
@@ -91,8 +92,10 @@ export default {
     noTasks: '작업이 없습니다',
     dragToReorder: '드래그하여 순서 변경',
     importConfirmTitle: '작업 목록 가져오기',
-    importConfirmMessageOverwrite: '가져오기는 현재 인스턴스의 작업 목록을 덮어씁니다. 계속하시겠습니까?',
-    importConfirmMessageMerge: '가져온 내용을 현재 인스턴스의 작업 목록에 병합합니다. 계속하시겠습니까?',
+    importConfirmMessageOverwrite:
+      '가져오기는 현재 인스턴스의 작업 목록을 덮어씁니다. 계속하시겠습니까?',
+    importConfirmMessageMerge:
+      '가져온 내용을 현재 인스턴스의 작업 목록에 병합합니다. 계속하시겠습니까?',
     importConfirmAction: '가져오기',
     importPreviewCount: '가져오기 내용: {{count}}개 작업',
     importModeLabel: '가져오기 방식',
