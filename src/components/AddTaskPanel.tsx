@@ -284,83 +284,98 @@ export function AddTaskPanel() {
         </div>
       </div>
 
-      {/* 任务列表 */}
+      {/* 任务列表（包含特殊任务） */}
       <div className="max-h-48 overflow-y-auto">
-        {filteredTasks.length === 0 ? (
+        {filteredTasks.length === 0 && !instance ? (
           <div className="p-4 text-center text-sm text-text-muted">
             {t('addTaskPanel.noResults')}
           </div>
         ) : (
-          <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {filteredTasks.map((task) => {
-              const count = taskCounts[task.name] || 0;
-              const label = resolveI18nText(task.label, langKey) || task.name;
-              const isNew = newTaskNames.includes(task.name);
-              const { isIncompatible, reason } = getTaskCompatibility(task);
+          <div className="p-2 space-y-2">
+            {/* 普通任务网格 */}
+            {filteredTasks.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {filteredTasks.map((task) => {
+                  const count = taskCounts[task.name] || 0;
+                  const label = resolveI18nText(task.label, langKey) || task.name;
+                  const isNew = newTaskNames.includes(task.name);
+                  const { isIncompatible, reason } = getTaskCompatibility(task);
 
-              return (
-                <TaskButton
-                  key={task.name}
-                  task={task}
-                  count={count}
-                  isNew={isNew}
-                  label={label}
-                  langKey={langKey}
-                  basePath={basePath}
-                  disabled={isIncompatible}
-                  incompatibleReason={reason}
-                  onClick={() => handleAddTask(task.name)}
-                />
-              );
-            })}
+                  return (
+                    <TaskButton
+                      key={task.name}
+                      task={task}
+                      count={count}
+                      isNew={isNew}
+                      label={label}
+                      langKey={langKey}
+                      basePath={basePath}
+                      disabled={isIncompatible}
+                      incompatibleReason={reason}
+                      onClick={() => handleAddTask(task.name)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 特殊任务：前后置动作 - 仅在有未添加的特殊任务时显示 */}
+            {instance && (!instance.preAction || !instance.postAction) && (
+              <>
+                {/* 分割线 */}
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="flex-1 h-px bg-border/50" />
+                  <span className="text-[10px] text-text-muted/60 uppercase tracking-wider">
+                    {t('addTaskPanel.specialTasks')}
+                  </span>
+                  <div className="flex-1 h-px bg-border/50" />
+                </div>
+
+                {/* 特殊任务按钮 */}
+                <div className="flex gap-2">
+                  {/* 前置动作 */}
+                  {!instance.preAction && (
+                    <button
+                      onClick={() => setInstancePreAction(instance.id, defaultAction)}
+                      disabled={instance.isRunning}
+                      className={clsx(
+                        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors',
+                        'bg-bg-secondary/70 hover:bg-bg-hover text-text-secondary border border-border/70 hover:border-accent',
+                        instance.isRunning && 'opacity-50 cursor-not-allowed',
+                      )}
+                    >
+                      <Play className="w-3.5 h-3.5 text-success/80" />
+                      <span>{t('action.preAction')}</span>
+                    </button>
+                  )}
+                  {/* 后置动作 */}
+                  {!instance.postAction && (
+                    <button
+                      onClick={() => setInstancePostAction(instance.id, defaultAction)}
+                      disabled={instance.isRunning}
+                      className={clsx(
+                        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors',
+                        'bg-bg-secondary/70 hover:bg-bg-hover text-text-secondary border border-border/70 hover:border-accent',
+                        instance.isRunning && 'opacity-50 cursor-not-allowed',
+                      )}
+                    >
+                      <Flag className="w-3.5 h-3.5 text-warning/80" />
+                      <span>{t('action.postAction')}</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* 无搜索结果提示 */}
+            {filteredTasks.length === 0 && (
+              <div className="py-2 text-center text-sm text-text-muted">
+                {t('addTaskPanel.noResults')}
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* 特殊任务：前后置动作 */}
-      {instance && (
-        <div className="border-t border-border p-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted flex-shrink-0">{t('addTaskPanel.specialTasks')}</span>
-            <div className="flex-1 flex gap-2">
-              {/* 前置动作 */}
-              {!instance.preAction && (
-                <button
-                  onClick={() => setInstancePreAction(instance.id, defaultAction)}
-                  disabled={instance.isRunning}
-                  className={clsx(
-                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors',
-                    'bg-bg-secondary hover:bg-bg-hover text-text-secondary border border-border hover:border-accent',
-                    instance.isRunning && 'opacity-50 cursor-not-allowed',
-                  )}
-                >
-                  <Play className="w-3.5 h-3.5 text-success" />
-                  <span>{t('action.preAction')}</span>
-                </button>
-              )}
-              {/* 后置动作 */}
-              {!instance.postAction && (
-                <button
-                  onClick={() => setInstancePostAction(instance.id, defaultAction)}
-                  disabled={instance.isRunning}
-                  className={clsx(
-                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors',
-                    'bg-bg-secondary hover:bg-bg-hover text-text-secondary border border-border hover:border-accent',
-                    instance.isRunning && 'opacity-50 cursor-not-allowed',
-                  )}
-                >
-                  <Flag className="w-3.5 h-3.5 text-warning" />
-                  <span>{t('action.postAction')}</span>
-                </button>
-              )}
-              {/* 都已添加时的提示 */}
-              {instance.preAction && instance.postAction && (
-                <span className="text-xs text-text-muted italic">{t('addTaskPanel.allSpecialTasksAdded')}</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
