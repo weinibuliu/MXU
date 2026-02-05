@@ -793,9 +793,18 @@ export const useAppStore = create<AppState>()(
         registerCustomAccent(accent);
       });
 
+      // 恢复最后激活的实例 ID，如果保存的实例仍存在则使用它，否则回退到第一个实例
+      const savedActiveId = config.lastActiveInstanceId;
+      const activeInstanceId =
+        savedActiveId && instances.some((i) => i.id === savedActiveId)
+          ? savedActiveId
+          : instances.length > 0
+            ? instances[0].id
+            : null;
+
       set({
         instances,
-        activeInstanceId: instances.length > 0 ? instances[0].id : null,
+        activeInstanceId,
         theme: config.settings.theme,
         accentColor,
         language: config.settings.language,
@@ -1477,6 +1486,8 @@ function generateConfig(): MxuConfig {
     newTaskNames: state.newTaskNames,
     // 保存自定义强调色
     customAccents: state.customAccents,
+    // 保存最后激活的实例 ID
+    lastActiveInstanceId: state.activeInstanceId || undefined,
   };
 }
 

@@ -143,6 +143,8 @@ export interface MxuConfig {
   newTaskNames?: string[]; // 用户尚未查看的新增任务名称列表
   /** 自定义强调色列表 */
   customAccents?: CustomAccent[];
+  /** 最后激活的实例 ID */
+  lastActiveInstanceId?: string;
 }
 
 // 默认窗口大小
