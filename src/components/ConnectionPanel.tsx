@@ -516,6 +516,7 @@ export function ConnectionPanel() {
         config = {
           type: 'PlayCover',
           address: playcoverAddress,
+          uuid: currentController?.playcover?.uuid || 'maa.playcover',
         };
         deviceName = playcoverAddress;
         targetType = 'device';
