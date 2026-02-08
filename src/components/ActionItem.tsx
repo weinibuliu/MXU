@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, X, Play } from 'lucide-react';
+import { ChevronRight, X, Play, GripVertical } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import type { ActionConfig } from '@/types/interface';
 import clsx from 'clsx';
@@ -75,6 +75,11 @@ export function ActionItem({ instanceId, action, disabled }: ActionItemProps) {
     >
       {/* 头部 */}
       <div className="flex items-center gap-2 p-3">
+        {/* 拖拽手柄占位（不可拖拽，仅用于对齐） */}
+        <div className="p-1 rounded opacity-30 cursor-not-allowed">
+          <GripVertical className="w-4 h-4 text-text-muted" />
+        </div>
+
         {/* 启用复选框 */}
         <label
           className={clsx(
