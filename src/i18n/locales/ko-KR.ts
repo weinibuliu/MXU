@@ -283,6 +283,7 @@ export default {
     preActionCompleted: '전처리 프로그램 완료',
     preActionFailed: '전처리 프로그램 실패: {{error}}',
     preActionExitCode: '전처리 프로그램 종료 코드: {{code}}',
+    preActionConnectDelay: '{{seconds}}초 후 연결합니다...',
   },
 
   // 옵션 에디터

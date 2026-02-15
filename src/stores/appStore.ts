@@ -972,6 +972,7 @@ export const useAppStore = create<AppState>()(
         autoStartRemovedInstanceName: config.settings.autoStartRemovedInstanceName,
         minimizeToTray: config.settings.minimizeToTray ?? false,
         onboardingCompleted: config.settings.onboardingCompleted ?? false,
+        preActionConnectDelaySec: config.settings.preActionConnectDelaySec ?? 5,
         hotkeys: config.settings.hotkeys ?? {
           startTasks: 'F10',
           stopTasks: 'F11',
@@ -1283,6 +1284,9 @@ export const useAppStore = create<AppState>()(
     // 新用户引导
     onboardingCompleted: false,
     setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+
+    // 前置动作连接延迟（默认 5 秒）
+    preActionConnectDelaySec: 5,
 
     // 更新检查状态
     updateInfo: null,
@@ -1659,6 +1663,7 @@ function generateConfig(): MxuConfig {
       autoStartRemovedInstanceName: state.autoStartRemovedInstanceName,
       minimizeToTray: state.minimizeToTray,
       onboardingCompleted: state.onboardingCompleted,
+      preActionConnectDelaySec: state.preActionConnectDelaySec,
       hotkeys: state.hotkeys,
     },
     recentlyClosed: state.recentlyClosed,

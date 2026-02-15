@@ -279,6 +279,7 @@ export default {
     preActionCompleted: '前置程序执行完成',
     preActionFailed: '前置程序执行失败: {{error}}',
     preActionExitCode: '前置程序退出码: {{code}}',
+    preActionConnectDelay: '等待 {{seconds}} 秒后连接...',
   },
 
   // 选项编辑器

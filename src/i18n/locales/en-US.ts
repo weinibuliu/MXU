@@ -285,6 +285,7 @@ export default {
     preActionCompleted: 'Pre-program completed',
     preActionFailed: 'Pre-program failed: {{error}}',
     preActionExitCode: 'Pre-program exit code: {{code}}',
+    preActionConnectDelay: 'Waiting {{seconds}} seconds before connecting...',
   },
 
   // Option Editor

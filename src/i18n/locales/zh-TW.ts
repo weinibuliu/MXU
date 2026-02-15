@@ -278,6 +278,7 @@ export default {
     preActionCompleted: '前置程式執行完成',
     preActionFailed: '前置程式執行失敗: {{error}}',
     preActionExitCode: '前置程式結束碼: {{code}}',
+    preActionConnectDelay: '等待 {{seconds}} 秒後連線...',
   },
 
   // 選項編輯器

@@ -338,6 +338,9 @@ export interface AppState {
   onboardingCompleted: boolean;
   setOnboardingCompleted: (completed: boolean) => void;
 
+  /** 前置动作轮询设备就绪后、连接前的额外延迟秒数（默认 5，仅通过编辑 mxu.json 修改） */
+  preActionConnectDelaySec: number;
+
   // 更新检查状态
   updateInfo: UpdateInfo | null;
   updateCheckLoading: boolean;

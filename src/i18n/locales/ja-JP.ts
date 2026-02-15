@@ -284,6 +284,7 @@ export default {
     preActionCompleted: '前処理プログラム完了',
     preActionFailed: '前処理プログラム失敗: {{error}}',
     preActionExitCode: '前処理プログラム終了コード: {{code}}',
+    preActionConnectDelay: '{{seconds}} 秒後に接続します...',
   },
 
   // オプションエディタ
