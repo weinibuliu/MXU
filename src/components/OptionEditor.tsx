@@ -73,6 +73,31 @@ function OptionLabel({
   );
 }
 
+/** 显示带图标的标签 + 控制器不兼容警告提示 */
+function OptionLabelWithIncompatible({
+  label,
+  icon,
+  basePath,
+  controllerIncompatible,
+}: {
+  label: string;
+  icon?: string;
+  basePath: string;
+  controllerIncompatible?: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-1.5">
+      <OptionLabel label={label} icon={icon} basePath={basePath} />
+      {controllerIncompatible && (
+        <Tooltip content={t('optionEditor.incompatibleController')}>
+          <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
 /** 显示选项描述文本（支持文件/URL/直接文本，以及 Markdown/HTML 和本地图片） */
 function OptionDescription({
   description,
@@ -315,14 +340,7 @@ export function OptionEditor({
     return (
       <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
         <div className={clsx('flex items-center justify-between', controllerIncompatible && 'opacity-60')}>
-          <div className="flex items-center gap-1.5">
-            <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
-            {controllerIncompatible && (
-              <Tooltip content={t('optionEditor.incompatibleController')}>
-                <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
-              </Tooltip>
-            )}
-          </div>
+          <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
           <SwitchButton
             value={isChecked}
             onChange={(checked) => {
@@ -365,14 +383,7 @@ export function OptionEditor({
 
     return (
       <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border', controllerIncompatible && 'opacity-60')}>
-        <div className="flex items-center gap-1.5">
-          <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
-          {controllerIncompatible && (
-            <Tooltip content={t('optionEditor.incompatibleController')}>
-              <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
-            </Tooltip>
-          )}
-        </div>
+        <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
         <OptionDescription
           description={optionDescription}
           basePath={basePath}
@@ -417,14 +428,7 @@ export function OptionEditor({
   return (
     <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border', controllerIncompatible && 'opacity-60')}>
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
-          {controllerIncompatible && (
-            <Tooltip content={t('optionEditor.incompatibleController')}>
-              <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
-            </Tooltip>
-          )}
-        </div>
+        <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
         <SelectComponent
           className="flex-1"
           value={selectedCaseName}
@@ -913,13 +917,15 @@ export function SwitchGrid({ instanceId, taskId, items, disabled = false }: Swit
       {items.map((item) => {
         const itemDisabled = disabled || !!item.controllerIncompatible;
         const tooltipContent = item.controllerIncompatible
-          ? t('optionEditor.incompatibleController')
+          ? item.description
+            ? `${t('optionEditor.incompatibleController')} — ${item.description}`
+            : t('optionEditor.incompatibleController')
           : item.description;
         return (
           <Tooltip key={item.optionKey} content={tooltipContent}>
             <button
               type="button"
-              onClick={() => handleToggle(item.optionKey, item.isChecked, !!item.controllerIncompatible)}
+              onClick={() => handleToggle(item.optionKey, item.isChecked, itemDisabled)}
               disabled={itemDisabled}
               className={clsx(
                 'px-2 py-1.5 text-xs rounded border transition-colors truncate',
