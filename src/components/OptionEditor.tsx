@@ -51,6 +51,8 @@ interface OptionEditorProps {
   depth?: number;
   /** 是否禁用编辑（只读模式） */
   disabled?: boolean;
+  /** 是否因控制器不兼容而禁用 */
+  controllerIncompatible?: boolean;
 }
 
 /** 显示带图标的标签（仅标签本身） */
@@ -67,6 +69,31 @@ function OptionLabel({
     <div className="flex items-center gap-1.5 min-w-[80px]">
       {icon && <AsyncIcon icon={icon} basePath={basePath} className="w-4 h-4 object-contain flex-shrink-0" />}
       <span className="text-sm text-text-secondary">{label}</span>
+    </div>
+  );
+}
+
+/** 显示带图标的标签 + 控制器不兼容警告提示 */
+function OptionLabelWithIncompatible({
+  label,
+  icon,
+  basePath,
+  controllerIncompatible,
+}: {
+  label: string;
+  icon?: string;
+  basePath: string;
+  controllerIncompatible?: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-1.5">
+      <OptionLabel label={label} icon={icon} basePath={basePath} />
+      {controllerIncompatible && (
+        <Tooltip content={t('optionEditor.incompatibleController')}>
+          <AlertCircle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+        </Tooltip>
+      )}
     </div>
   );
 }
@@ -250,6 +277,7 @@ export function OptionEditor({
   value,
   depth = 0,
   disabled = false,
+  controllerIncompatible = false,
 }: OptionEditorProps) {
   const { t } = useTranslation();
   const {
@@ -313,8 +341,8 @@ export function OptionEditor({
 
     return (
       <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
-        <div className="flex items-center justify-between">
-          <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
+        <div className={clsx('flex items-center justify-between', controllerIncompatible && 'opacity-60')}>
+          <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
           <SwitchButton
             value={isChecked}
             onChange={(checked) => {
@@ -356,8 +384,8 @@ export function OptionEditor({
     const inputValues = value?.type === 'input' ? value.values : {};
 
     return (
-      <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
-        <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
+      <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border', controllerIncompatible && 'opacity-60')}>
+        <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
         <OptionDescription
           description={optionDescription}
           basePath={basePath}
@@ -400,9 +428,9 @@ export function OptionEditor({
   const SelectComponent = useComboBox ? OptionSelectComboBox : OptionSelectDropdown;
 
   return (
-    <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
+    <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border', controllerIncompatible && 'opacity-60')}>
       <div className="flex items-center gap-3">
-        <OptionLabel label={optionLabel} icon={optionDef.icon} basePath={basePath} />
+        <OptionLabelWithIncompatible label={optionLabel} icon={optionDef.icon} basePath={basePath} controllerIncompatible={controllerIncompatible} />
         <SelectComponent
           className="flex-1"
           value={selectedCaseName}
@@ -880,6 +908,7 @@ interface SwitchGridItemData {
   label: string;
   description?: string;
   isChecked: boolean;
+  controllerIncompatible?: boolean;
 }
 
 interface SwitchGridProps {
@@ -892,9 +921,10 @@ interface SwitchGridProps {
 /** Switch 网格组件：用于显示多个无子选项的 switch */
 export function SwitchGrid({ instanceId, taskId, items, disabled = false }: SwitchGridProps) {
   const { setTaskOptionValue } = useAppStore();
+  const { t } = useTranslation();
 
-  const handleToggle = (optionKey: string, currentValue: boolean) => {
-    if (disabled) return;
+  const handleToggle = (optionKey: string, currentValue: boolean, itemDisabled: boolean) => {
+    if (disabled || itemDisabled) return;
     setTaskOptionValue(instanceId, taskId, optionKey, {
       type: 'switch',
       value: !currentValue,
@@ -903,25 +933,33 @@ export function SwitchGrid({ instanceId, taskId, items, disabled = false }: Swit
 
   return (
     <div className="grid grid-cols-4 gap-1">
-      {items.map((item) => (
-        <Tooltip key={item.optionKey} content={item.description}>
-          <button
-            type="button"
-            onClick={() => handleToggle(item.optionKey, item.isChecked)}
-            disabled={disabled}
-            className={clsx(
-              'px-2 py-1.5 text-xs rounded border transition-colors truncate',
-              item.isChecked
-                ? 'bg-accent text-white border-accent'
-                : 'bg-bg-primary text-text-secondary border-border hover:border-accent hover:text-accent',
-              disabled && 'opacity-60 cursor-not-allowed',
-            )}
-            title={item.description || item.label}
-          >
-            {item.label}
-          </button>
-        </Tooltip>
-      ))}
+      {items.map((item) => {
+        const itemDisabled = disabled || !!item.controllerIncompatible;
+        const tooltipContent = item.controllerIncompatible
+          ? item.description
+            ? `${t('optionEditor.incompatibleController')} — ${item.description}`
+            : t('optionEditor.incompatibleController')
+          : item.description;
+        return (
+          <Tooltip key={item.optionKey} content={tooltipContent}>
+            <button
+              type="button"
+              onClick={() => handleToggle(item.optionKey, item.isChecked, itemDisabled)}
+              disabled={itemDisabled}
+              className={clsx(
+                'px-2 py-1.5 text-xs rounded border transition-colors truncate',
+                item.isChecked
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-bg-primary text-text-secondary border-border hover:border-accent hover:text-accent',
+                itemDisabled && 'opacity-60 cursor-not-allowed',
+              )}
+              title={item.description || item.label}
+            >
+              {item.label}
+            </button>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
